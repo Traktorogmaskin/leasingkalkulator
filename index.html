@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Leasingkalkulator</title>
+
+  <!-- jsPDF (for PDF download) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{
+      --tm-orange:#f07a00;
+      --tm-card:#2b2f33;
+      --tm-card-2:#262a2e;
+      --tm-bg:#ececec;
+      --radius:16px;
+      --shadow: 0 12px 28px rgba(0,0,0,.18);
+      --shadow-soft: 0 8px 18px rgba(0,0,0,.14);
+      --tm-line: rgba(240,122,0,.65);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #f4f4f4 0%, var(--tm-bg) 55%, #e8e8e8 100%);
+      color:#111;
+    }
+    .topbar{ height:12px; background:#3b3b3b; border-bottom:4px solid var(--tm-orange); }
+    .wrap{ max-width:1080px; margin:0 auto; padding:18px 16px 40px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 940px){ .grid{ grid-template-columns:1fr; } }
+
+    .card{
+      background: linear-gradient(180deg, var(--tm-card) 0%, var(--tm-card-2) 100%);
+      color:#fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      left: 14px; right: 14px; top: 10px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(0,0,0,0), var(--tm-line), rgba(0,0,0,0));
+      opacity:.95;
+      pointer-events:none;
+    }
+    .card-inner{ padding: 18px 16px 16px; }
+    .card h2{ margin: 8px 0 10px; font-size: 16px; letter-spacing:.2px; font-weight: 900; }
+    .hint{ margin: -2px 0 10px; color: rgba(255,255,255,.75); font-size: 13px; line-height:1.35; }
+
+    .fields{ display:grid; gap: 10px; margin-top: 10px; }
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 520px){ .row2{ grid-template-columns:1fr; } }
+
+    .field{ display:grid; gap: 6px; }
+    .labelrow{ display:flex; align-items:baseline; justify-content:space-between; gap: 10px; }
+    label{ font-weight: 900; font-size: 13px; }
+    .sub{ color: rgba(255,255,255,.7); font-size: 12px; font-weight: 800; }
+
+    input, select, textarea{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(12,14,16,.55);
+      color: #fff;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+      font-size: 15px;
+      resize: vertical;
+    }
+    textarea{ min-height: 86px; }
+    input::placeholder, textarea::placeholder{ color: rgba(255,255,255,.35); }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(240,122,0,.55);
+      box-shadow: inset 0 0 0 1px rgba(240,122,0,.25), 0 0 0 4px rgba(240,122,0,.12);
+    }
+
+    .btnrow{ margin-top: 10px; display:flex; gap: 10px; align-items:center; flex-wrap:wrap; }
+    .btn{
+      cursor:pointer;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 950;
+      letter-spacing:.2px;
+      background: linear-gradient(180deg, #ff8a1d 0%, var(--tm-orange) 100%);
+      color:#141414;
+      box-shadow: 0 10px 18px rgba(240,122,0,.22);
+    }
+    .btn.secondary{
+      background: rgba(255,255,255,.08);
+      color:#fff;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: none;
+    }
+
+    .results{ display:grid; gap: 10px; margin-top: 6px; }
+    .pill{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+    .pill .k{
+      font-weight: 900;
+      font-size: 13px;
+      color: rgba(255,255,255,.88);
+      line-height:1.25;
+    }
+    .pill .v{
+      font-weight: 950;
+      font-size: 20px;
+      letter-spacing:.3px;
+      text-align:right;
+      white-space:nowrap;
+    }
+    .unit{ font-size: 12px; font-weight: 900; opacity:.75; margin-left: 6px; }
+
+    details{
+      margin-top: 10px;
+      border-radius: 14px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.12);
+    }
+    summary{
+      cursor:pointer;
+      padding: 12px 12px;
+      font-weight: 950;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    .chev{
+      width: 10px; height: 10px;
+      border-right: 2px solid rgba(255,255,255,.75);
+      border-bottom: 2px solid rgba(255,255,255,.75);
+      transform: rotate(45deg);
+      transition: transform .15s ease;
+      margin-top: -2px;
+    }
+    details[open] .chev{ transform: rotate(225deg); margin-top: 2px; }
+
+    .calcbox{
+      padding: 12px 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12.5px;
+      color: rgba(255,255,255,.86);
+      line-height:1.45;
+      white-space:pre-wrap;
+    }
+
+    .note{
+      margin-top: 10px;
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      line-height:1.35;
+    }
+
+    .help{
+      margin-top: 8px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.82);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+
+    .oktoast{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:16px;
+      background: rgba(240,122,0,.18);
+      border:1px solid rgba(240,122,0,.55);
+      color:#ffe8d2;
+      padding:10px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      box-shadow: 0 10px 20px rgba(0,0,0,.18);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease;
+      z-index: 9999;
+    }
+    .oktoast.show{ opacity:1; }
+  </style>
+</head>
+<body>
+  <header class="topbar" aria-hidden="true"></header>
+
+  <main class="wrap">
+    <section class="grid">
+      <!-- INPUT -->
+      <div class="card">
+        <div class="card-inner">
+          <h2>Inndata</h2>
+          <p class="hint">
+            Rask, veiledende leasingkalkyle. Du kan justere rente selv for å se svingninger.
+          </p>
+
+          <div class="fields">
+            <div class="field">
+              <div class="labelrow">
+                <label for="priceExVat">Pris på objekt (eks. mva)</label>
+                <div class="sub">kr</div>
+              </div>
+              <input id="priceExVat" inputmode="numeric" placeholder="f.eks. 180000">
+            </div>
+
+            <div class="row2">
+              <div class="field">
+                <div class="labelrow">
+                  <label for="frequency">Fakturafrekvens</label>
+                  <div class="sub">standard</div>
+                </div>
+                <select id="frequency">
+                  <option value="monthly">Månedlig</option>
+                  <option value="quarterly">Kvartalsvis</option>
+                  <option value="semiannual">Halvårlig</option>
+                  <option value="annual">Årlig</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <div class="labelrow">
+                  <label for="nominalRate">Nominell rente (%)</label>
+                  <div class="sub">veiledende</div>
+                </div>
+                <input id="nominalRate" inputmode="decimal" placeholder="f.eks. 6,9">
+              </div>
+            </div>
+
+            <div class="row2">
+              <div class="field">
+                <div class="labelrow">
+                  <label for="years">Løpetid år</label>
+                  <div class="sub">år</div>
+                </div>
+                <select id="years">
+                  <option>2</option><option>3</option><option>4</option><option>5</option>
+                  <option>6</option><option selected>7</option><option>8</option><option>9</option><option>10</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <div class="labelrow">
+                  <label for="monthsExtra">+ måneder</label>
+                  <div class="sub">mnd</div>
+                </div>
+                <select id="monthsExtra">
+                  <option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                  <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row2">
+              <div class="field">
+                <div class="labelrow">
+                  <label for="downPaymentKr">Startleie / forskudd (kr)</label>
+                  <div class="sub">valgfritt</div>
+                </div>
+                <input id="downPaymentKr" inputmode="numeric" placeholder="f.eks. 0">
+              </div>
+
+              <div class="field">
+                <div class="labelrow">
+                  <label for="tradeInKr">Forskudd fra innbytte (kr)</label>
+                  <div class="sub">valgfritt</div>
+                </div>
+                <input id="tradeInKr" inputmode="numeric" placeholder="f.eks. 0">
+              </div>
+            </div>
+
+            <div class="btnrow">
+              <button class="btn" id="calcBtn" type="button">Beregn</button>
+              <button class="btn secondary" id="resetBtn" type="button">Nullstill</button>
+              <button class="btn secondary" id="copyBtn" type="button">📋 Kopier forespørsel</button>
+              <button class="btn secondary" id="pdfBtn" type="button">⬇️ Last ned PDF</button>
+            </div>
+
+            <p class="note" id="legalNote">
+              Beregningen er veiledende og forutsetter kredittgodkjenning. Rente varierer med kredittvurdering og finanspartner. Endelig tilbud fastsettes av finanspartner.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="card">
+        <div class="card-inner">
+          <h2>Resultat</h2>
+          <p class="hint">Hovedsvar først. Detaljer ligger under.</p>
+
+          <div class="results" id="resultPills"></div>
+
+          <details id="detailsBox" style="display:none">
+            <summary>
+              Vis beregning
+              <span class="chev" aria-hidden="true"></span>
+            </summary>
+            <div class="calcbox" id="calcText"></div>
+          </details>
+
+          <div class="fields" style="margin-top:10px;">
+            <div class="field">
+              <div class="labelrow">
+                <label for="customerComment">Kommentar (valgfritt)</label>
+                <div class="sub">til forespørsel</div>
+              </div>
+              <textarea id="customerComment" placeholder="F.eks. ønsket finanspartner, forespørsel om leasing/innvilgelse, hvilket objekt det gjelder (link/varenr), eller annet du vil opplyse om."></textarea>
+            </div>
+
+            <div class="help">
+              <strong>Kopier forespørsel:</strong> Kopierer en ferdig tekst du kan lime inn i e-post eller annen kommunikasjon med selger.
+            </div>
+          </div>
+
+          <p class="note" id="footerNote" style="margin-top:10px;">
+            Tallene er avrundet opp til nærmeste 100 kr.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="oktoast" id="toast">Kopiert ✅</div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    function rawTrim(v){ return String(v ?? '').trim().replace(/\s+/g,''); }
+    function toNumber(v){
+      const s0 = rawTrim(v);
+      if (s0 === '') return NaN;
+      const s = s0.replace(',', '.');
+      const n = Number(s);
+      return Number.isFinite(n) ? n : NaN;
+    }
+    function ceil100(x){
+      if (!Number.isFinite(x)) return NaN;
+      return Math.ceil(x / 100) * 100;
+    }
+    function fmtMoney(n){
+      if (!Number.isFinite(n)) return '–';
+      return Math.round(n).toLocaleString('no-NO');
+    }
+    function pillRow(label, value, unit){
+      return `
+        <div class="pill">
+          <div class="k">${label}</div>
+          <div class="v">${value}<span class="unit">${unit || ''}</span></div>
+        </div>
+      `;
+    }
+    function periodFromFreq(freq){
+      if (freq === 'monthly') return 12;
+      if (freq === 'quarterly') return 4;
+      if (freq === 'semiannual') return 2;
+      return 1;
+    }
+    function showToast(msg){
+      const t = $('#toast');
+      t.textContent = msg || 'Kopiert ✅';
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 1200);
+    }
+
+    const DEFAULT_CFG = {
+      defaultNominalRatePercent: 6.90,
+      defaultFrequency: "monthly",
+      defaultYears: 7,
+      defaultMonthsExtra: 0
+    };
+
+    let CFG = DEFAULT_CFG;
+
+
+    // Ren annuitet (ingen gebyr/restverdi)
+    function annuity(principal, r, n){
+      if (!Number.isFinite(principal) || principal <= 0) return NaN;
+      if (!Number.isFinite(r) || r < 0) r = 0;
+      if (!Number.isFinite(n) || n <= 0) return NaN;
+      if (r === 0) return principal / n;
+      return principal * (r / (1 - Math.pow(1 + r, -n)));
+    }
+
+    function applyDefaults(){
+      $('#nominalRate').value = String(CFG.defaultNominalRatePercent).replace('.', ',');
+      $('#frequency').value = CFG.defaultFrequency;
+      $('#years').value = String(CFG.defaultYears);
+      $('#monthsExtra').value = String(CFG.defaultMonthsExtra);
+
+      const saved = localStorage.getItem('tmLeaseCalcSimpleV3');
+      if (saved){
+        try{
+          const s = JSON.parse(saved);
+          if (s && typeof s === 'object'){
+            if (s.priceExVat) $('#priceExVat').value = s.priceExVat;
+            if (s.nominalRate) $('#nominalRate').value = s.nominalRate;
+            if (s.frequency) $('#frequency').value = s.frequency;
+            if (s.years) $('#years').value = s.years;
+            if (s.monthsExtra) $('#monthsExtra').value = s.monthsExtra;
+            if (s.downPaymentKr) $('#downPaymentKr').value = s.downPaymentKr;
+            if (s.tradeInKr) $('#tradeInKr').value = s.tradeInKr;
+            if (s.customerComment) $('#customerComment').value = s.customerComment;
+          }
+        } catch {}
+      }
+    }
+
+    function saveState(){
+      const s = {
+        priceExVat: $('#priceExVat').value,
+        nominalRate: $('#nominalRate').value,
+        frequency: $('#frequency').value,
+        years: $('#years').value,
+        monthsExtra: $('#monthsExtra').value,
+        downPaymentKr: $('#downPaymentKr').value,
+        tradeInKr: $('#tradeInKr').value,
+        customerComment: $('#customerComment').value
+      };
+      localStorage.setItem('tmLeaseCalcSimpleV3', JSON.stringify(s));
+    }
+
+    function resetAll(){
+      $('#priceExVat').value = '';
+      $('#downPaymentKr').value = '';
+      $('#tradeInKr').value = '';
+      $('#customerComment').value = '';
+      localStorage.removeItem('tmLeaseCalcSimpleV3');
+
+      applyDefaults();
+
+      $('#resultPills').innerHTML = '';
+      $('#detailsBox').style.display = 'none';
+      $('#calcText').textContent = '';
+    }
+
+    function compute(){
+      const price = toNumber($('#priceExVat').value);
+      const freq = $('#frequency').value;
+      const periodsPerYear = periodFromFreq(freq);
+
+      const years = toNumber($('#years').value);
+      const monthsExtra = toNumber($('#monthsExtra').value);
+      const totalMonths = (Number.isFinite(years)? years*12 : 0) + (Number.isFinite(monthsExtra)? monthsExtra : 0);
+      const n = Math.round((totalMonths / 12) * periodsPerYear);
+
+      const nominalRatePct = toNumber($('#nominalRate').value);
+      const r = (Number.isFinite(nominalRatePct) ? (nominalRatePct/100) : NaN) / periodsPerYear;
+
+      const downPay = toNumber($('#downPaymentKr').value);
+      const tradeIn = toNumber($('#tradeInKr').value);
+
+      const dp = Number.isFinite(downPay) ? Math.max(0, downPay) : 0;
+      const ti = Number.isFinite(tradeIn) ? Math.max(0, tradeIn) : 0;
+
+      if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(r) || r < 0 || !Number.isFinite(n) || n <= 0){
+        $('#resultPills').innerHTML = pillRow('Fyll inn pris, rente og løpetid', '–', '');
+        $('#detailsBox').style.display = 'none';
+        return;
+      }
+
+      let principal = price - dp - ti;
+      if (principal < 0) principal = 0;
+
+      const term = annuity(principal, r, n);
+      const termRounded = ceil100(term);
+      const financedRounded = ceil100(principal);
+
+      const freqLabel = freq === 'monthly' ? 'per måned'
+        : freq === 'quarterly' ? 'per kvartal'
+        : freq === 'semiannual' ? 'per halvår'
+        : 'per år';
+
+      let html = '';
+      html += pillRow(`Estimert terminbeløp (${freqLabel})`, fmtMoney(termRounded), 'kr');
+      html += pillRow('Finansiert beløp (eks. mva)', fmtMoney(financedRounded), 'kr');
+      html += pillRow('Nominell rente (valgt)', String(nominalRatePct).replace('.', ','), '%');
+      $('#resultPills').innerHTML = html;
+
+      const calcLines = [];
+      calcLines.push(`GITT:`);
+      calcLines.push(`- Pris (eks. mva): ${fmtMoney(price)} kr`);
+      calcLines.push(`- Startleie/forskudd: ${fmtMoney(dp)} kr`);
+      calcLines.push(`- Forskudd fra innbytte: ${fmtMoney(ti)} kr`);
+      calcLines.push(`- Finansiert beløp: ${fmtMoney(principal)} kr`);
+      calcLines.push(`- Frekvens: ${freqLabel}`);
+      calcLines.push(`- Løpetid: ${totalMonths} mnd → ${n} terminer`);
+      calcLines.push(`- Nominell rente: ${String(nominalRatePct).replace('.', ',')} %`);
+      calcLines.push(`- Rente per termin: ${(r*100).toFixed(4).replace('.', ',')} %`);
+      calcLines.push(``);
+      calcLines.push(`BEREGNING:`);
+      calcLines.push(`- Termin (annuitet) ≈ ${fmtMoney(term)} kr`);
+      calcLines.push(`- Avrundet opp til nærmeste 100 kr: ${fmtMoney(termRounded)} kr`);
+
+      $('#detailsBox').style.display = 'block';
+      $('#calcText').textContent = calcLines.join('\n');
+
+      saveState();
+    }
+
+    function nowStamp(){
+      const d = new Date();
+      // 2026-02-17 21:34
+      const pad = (n)=>String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function buildCopyText(){
+      compute();
+
+      const price = toNumber($('#priceExVat').value);
+      const freq = $('#frequency').value;
+      const years = toNumber($('#years').value);
+      const monthsExtra = toNumber($('#monthsExtra').value);
+      const nominalRatePct = toNumber($('#nominalRate').value);
+      const downPay = toNumber($('#downPaymentKr').value);
+      const tradeIn = toNumber($('#tradeInKr').value);
+      const comment = ($('#customerComment').value || '').trim();
+
+      const totalMonths = (Number.isFinite(years)? years*12 : 0) + (Number.isFinite(monthsExtra)? monthsExtra : 0);
+
+      const freqLabel = freq === 'monthly' ? 'Månedlig'
+        : freq === 'quarterly' ? 'Kvartalsvis'
+        : freq === 'semiannual' ? 'Halvårlig'
+        : 'Årlig';
+
+      const pills = $('#resultPills').querySelectorAll('.pill .v');
+      const term = pills.length ? pills[0].childNodes[0].textContent.trim() : '–';
+
+      const lines = [
+        `Leasingforespørsel (veiledende)`,
+        `--------------------------------`,
+        `Kilde: Traktor og Maskin leasingkalkulator`,
+        `Tidspunkt: ${nowStamp()}`,
+        `Side: ${location.href}`,
+        ``,
+        `Pris (eks. mva): ${Number.isFinite(price)? fmtMoney(price) : '–'} kr`,
+        `Fakturafrekvens: ${freqLabel}`,
+        `Løpetid: ${totalMonths} måneder`,
+        `Nominell rente brukt i kalkyle: ${Number.isFinite(nominalRatePct)? String(nominalRatePct).replace('.', ',') : '–'} %`,
+        `Startleie/forskudd: ${Number.isFinite(downPay)? fmtMoney(Math.max(0, downPay)) : '0'} kr`,
+        `Forskudd fra innbytte: ${Number.isFinite(tradeIn)? fmtMoney(Math.max(0, tradeIn)) : '0'} kr`,
+        ``,
+        `Estimert terminbeløp: ${term} kr`
+      ];
+
+      if (comment){
+        lines.push(``);
+        lines.push(`Kommentar:`);
+        lines.push(comment);
+      }
+
+      lines.push(``);
+      lines.push(`Beregningen er veiledende og forutsetter kredittgodkjenning. Rente varierer med kredittvurdering og finanspartner. Endelig tilbud fastsettes av finanspartner.`);
+      lines.push(`Tallene er avrundet opp til nærmeste 100 kr.`);
+
+      return lines.join('\n');
+    }
+
+    async function loadLogoDataURL(path){
+      // Tries to load an image and convert to dataURL for jsPDF.
+      // If missing -> returns null (PDF still works)
+      try{
+        const res = await fetch(path, { cache: 'no-store' });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        return await new Promise((resolve)=>{
+          const reader = new FileReader();
+          reader.onload = ()=> resolve(reader.result);
+          reader.onerror = ()=> resolve(null);
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    async function downloadPDF(){
+      compute();
+
+      const { jsPDF } = (window.jspdf || {});
+      if (!jsPDF){
+        showToast('PDF-feil ❗');
+        return;
+      }
+
+      const copyText = buildCopyText(); // includes timestamp/source etc.
+      const lines = copyText.split('\n');
+
+      // A4 portrait, mm
+      const doc = new jsPDF({ unit:'mm', format:'a4' });
+
+      // layout
+      const margin = 14;
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      let y = 16;
+
+      // Optional logo
+      const logoData = await loadLogoDataURL('./tm-logo.png');
+      if (logoData){
+        try{
+          // Place logo top-left (width 34mm)
+          doc.addImage(logoData, 'PNG', margin, 12, 34, 14);
+        } catch {}
+      }
+
+      // Header right side
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('Leasingforespørsel (veiledende)', pageW - margin, y, { align:'right' });
+      y += 7;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text('Traktor og Maskin', pageW - margin, y, { align:'right' });
+      y += 6;
+
+      // Orange divider line
+      doc.setDrawColor(240, 122, 0);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, pageW - margin, y);
+      y += 6;
+
+      // Body box
+      doc.setFont('courier', 'normal');
+      doc.setFontSize(10);
+
+      const maxWidth = pageW - margin*2;
+      const lineHeight = 4.6;
+
+      // Wrap lines safely
+      const wrapped = [];
+      for (const ln of lines){
+        const parts = doc.splitTextToSize(ln, maxWidth);
+        if (parts.length === 0) wrapped.push('');
+        else wrapped.push(...parts);
+      }
+
+      for (const ln of wrapped){
+        if (y > pageH - margin){
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(ln, margin, y);
+        y += lineHeight;
+      }
+
+      // Footer
+      const footer = `Generert: ${nowStamp()}  •  Traktor og Maskin`;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(120,120,120);
+      doc.text(footer, margin, pageH - 10);
+
+      doc.save(`leasingforesporsel_${nowStamp().replace(/[:\s]/g,'-')}.pdf`);
+      showToast('PDF lastet ned ✅');
+    }
+
+    function wire(){
+      $('#calcBtn').addEventListener('click', compute);
+      $('#resetBtn').addEventListener('click', resetAll);
+
+      $('#copyBtn').addEventListener('click', async ()=>{
+        const text = buildCopyText();
+        try{
+          await navigator.clipboard.writeText(text);
+          showToast('Kopiert ✅');
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          showToast('Kopiert ✅');
+        }
+      });
+
+      $('#pdfBtn').addEventListener('click', downloadPDF);
+
+      let t;
+      const debounce = () => { clearTimeout(t); t = setTimeout(compute, 180); saveState(); };
+
+      [
+        '#priceExVat','#nominalRate','#years','#monthsExtra',
+        '#downPaymentKr','#tradeInKr','#frequency','#customerComment'
+      ].forEach(id=>{
+        $(id).addEventListener('input', debounce);
+        $(id).addEventListener('change', debounce);
+      });
+    }
+
+    (async function init(){
+
+      applyDefaults();
+      wire();
+      compute();
+    })();
+  </script>
+</body>
+</html>
