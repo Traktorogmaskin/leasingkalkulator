@@ -430,7 +430,7 @@
                 <span>Nominell rente (%)</span>
                 <span class="hint">veiledende</span>
               </label>
-              <input id="inRate" inputmode="decimal" value="f.eks. 6,9" />
+              <input id="inRate" inputmode="decimal" placeholder="f.eks. 6,9" />
             </div>
           </div>
 
@@ -618,32 +618,14 @@
               <div class="s">inkl. termingebyr per faktura</div>
             </div>
             <div class="mm">
-              <div class="k">Estimert termin (inkl. mva)</div>
-              <div class="v" id="outTermInc">—</div>
-              <div class="s">mva beregnet fra sats</div>
-            </div>
-            <div class="mm">
               <div class="k">Finansiert beløp (eks. mva)</div>
               <div class="v" id="outFin">—</div>
               <div class="s">pris − forskudd − innbytte (+ etablering)</div>
             </div>
-          </div>
-
-          <div class="minmax" style="margin-top:10px;">
             <div class="mm">
               <div class="k">Løpetid</div>
               <div class="v" id="outTermCount">—</div>
               <div class="s">antall terminer etter frekvens</div>
-            </div>
-            <div class="mm">
-              <div class="k">Renter i perioden</div>
-              <div class="v" id="outInterest">—</div>
-              <div class="s">hensyntatt innlagt rente</div>
-            </div>
-            <div class="mm">
-              <div class="k">Sum betalinger (eks. mva)</div>
-              <div class="v" id="outTotalEx">—</div>
-              <div class="s">terminer + etablering tilkommer.</div>
             </div>
           </div>
 
@@ -847,15 +829,11 @@
       }
 
       $('outTermEx').textContent = Number.isFinite(c.termExRounded) ? fmtMoney(c.termExRounded) : '—';
-      $('outTermInc').textContent = Number.isFinite(c.termIncRounded) ? fmtMoney(c.termIncRounded) : '—';
       $('outFin').textContent = Number.isFinite(c.financed) ? fmtMoney(ceil100(c.financed)) : '—';
 
       $('outTermCount').textContent = (Number.isFinite(c.n) && c.n>0)
         ? `${fmtCount(c.n)} terminer (${freqLabel(c.freq)})`
         : '—';
-
-      $('outInterest').textContent = Number.isFinite(c.interestEx) ? fmtMoney(ceil100(c.interestEx)) : '—';
-      $('outTotalEx').textContent = Number.isFinite(c.totalEx) ? fmtMoney(ceil100(c.totalEx)) : '—';
 
       const sum = $('sumLines');
       sum.innerHTML = '';
@@ -872,14 +850,6 @@
         const b = document.createElement('div');
         b.innerHTML = `<span>Finansiert beløp:</span> <b>${fmtMoney(ceil100(c.financed))}</b> (eks. mva).`;
         sum.appendChild(b);
-
-        const cc = document.createElement('div');
-        cc.innerHTML = `<span>Renter i perioden:</span> <b>${fmtMoney(ceil100(c.interestEx))}</b> (eks. mva).`;
-        sum.appendChild(cc);
-
-        const dd = document.createElement('div');
-        dd.innerHTML = `<span>Sum terminer:</span> <b>${fmtMoney(ceil100(c.totalEx))}</b> (eks. mva).`;
-        sum.appendChild(dd);
       }
 
       const lines = [];
@@ -1274,32 +1244,14 @@
                 <div class="s">inkl. termingebyr per faktura</div>
               </div>
               <div class="mm">
-                <div class="k">Estimert termin (inkl. mva)</div>
-                <div class="v">${escapeHtml(fmtMoneyPlain(c.termIncRounded))}</div>
-                <div class="s">mva beregnet fra sats</div>
-              </div>
-              <div class="mm">
                 <div class="k">Finansiert beløp (eks. mva)</div>
                 <div class="v">${escapeHtml(fmtMoneyPlain(ceil100(c.financed)))}</div>
                 <div class="s">pris − forskudd − innbytte (+ etablering)</div>
               </div>
-            </div>
-
-            <div class="minmax" style="margin-top:10px;">
               <div class="mm">
                 <div class="k">Løpetid</div>
                 <div class="v">${Number.isFinite(c.n) ? escapeHtml(`${fmtCount(c.n)} terminer (${freqLabel(c.freq)})`) : '—'}</div>
                 <div class="s">antall terminer etter frekvens</div>
-              </div>
-              <div class="mm">
-                <div class="k">Renter i perioden</div>
-                <div class="v">${escapeHtml(fmtMoneyPlain(ceil100(c.interestEx)))}</div>
-                <div class="s">hensyntatt innlagt rente</div>
-              </div>
-              <div class="mm">
-                <div class="k">Sum betalinger (eks. mva)</div>
-                <div class="v">${escapeHtml(fmtMoneyPlain(ceil100(c.totalEx)))}</div>
-                <div class="s">terminer + etablering tilkommer.</div>
               </div>
             </div>
 
@@ -1308,8 +1260,6 @@
               <div class="lines">
                 <div><span>Estimert termin:</span> <b>${escapeHtml(fmtMoneyPlain(c.termExRounded))}</b> ${escapeHtml(freqLabel(c.freq))} (eks. mva).</div>
                 <div><span>Finansiert beløp:</span> <b>${escapeHtml(fmtMoneyPlain(ceil100(c.financed)))}</b> (eks. mva).</div>
-                <div><span>Renter i perioden:</span> <b>${escapeHtml(fmtMoneyPlain(ceil100(c.interestEx)))}</b> (eks. mva).</div>
-                <div><span>Sum terminer:</span> <b>${escapeHtml(fmtMoneyPlain(ceil100(c.totalEx)))}</b> (eks. mva).</div>
               </div>
             </div>
 
@@ -1564,4 +1514,3 @@
   </script>
 </body>
 </html>
-
