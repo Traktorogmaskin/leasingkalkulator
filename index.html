@@ -1,1516 +1,1564 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Leasingkalkulator</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
-    :root{
-      --bg:#f4f6f8;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --line:#e5e7eb;
+    :root {
+      --bg: #f3f1ee;
+      --card: #ffffff;
+      --text: #2f3b4a;
+      --heading: #2b2f33;
+      --muted: #6a7787;
+      --line: #d8dde3;
 
-      --brand:#f97316;
+      --brand-dark: #2b2f33;
+      --brand-dark-2: #444444;
+      --brand-orange: #e67e22;
+      --brand-orange-hover: #f08b34;
+      --brand-info: #d8e9ef;
 
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --bad:#dc2626;
+      --ok-text: #168b46;
+      --ok-bg: #ecfdf3;
+      --ok-border: #86efac;
 
-      --ok-bg:#eaf7ee;
-      --warn-bg:#fff6e8;
-      --bad-bg:#ffecec;
+      --warn-text: #b45309;
+      --warn-bg: #fff7ed;
+      --warn-border: #f4c58e;
 
-      --shadow: 0 10px 25px rgba(15, 23, 42, .08);
-      --radius: 16px;
+      --error-text: #dc2626;
+      --error-bg: #fff4f4;
+      --error-border: #f2aaaa;
 
-      --glow-blue: 0 0 0 3px rgba(59,130,246,.22);
-      --glow-red: 0 0 0 3px rgba(239,68,68,.22);
-    }
-
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
-      background:var(--bg);
-    }
-
-    .topbar{
-      position:sticky; top:0; z-index:20;
-      background:#26313a;
-      color:#fff;
-      padding:10px 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      box-shadow:0 8px 18px rgba(0,0,0,.12);
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      font-weight:800;
-      letter-spacing:.2px;
-      white-space:nowrap;
-    }
-    .dot{ width:10px; height:10px; border-radius:999px; background:var(--brand); display:inline-block; }
-    .subtitle{
-      font-weight:600; opacity:.9; font-size:13px;
-      white-space:nowrap;
-    }
-    .top-actions{
-      display:flex; align-items:center; gap:10px;
-      white-space:nowrap;
-    }
-    .pill{
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      color:#fff;
-      padding:7px 10px;
-      border-radius:999px;
-      font-size:12px;
-      display:flex; align-items:center; gap:8px;
-    }
-    .toggle{
-      display:flex; align-items:center; gap:8px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .toggle input{ width:16px; height:16px; accent-color: #22c55e; }
-
-    .wrap{
-      max-width: 1500px;
-      margin: 18px auto;
-      padding: 0 18px 28px;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 0.95fr 1.05fr;
-      gap:16px;
-      align-items:start;
-    }
-    @media (max-width: 1080px){
-      .grid{ grid-template-columns: 1fr; }
-      .topbar{ flex-wrap:wrap; }
-      .subtitle{ white-space:normal; }
+      --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --container: 1210px;
+      --font:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .card-h{
-      padding:14px 16px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .card-h h2{
-      margin:0; font-size:16px; letter-spacing:.2px;
-    }
-    .card-b{ padding:16px; }
-    .muted{ color:var(--muted); font-size:13px; line-height:1.35; }
+    * { box-sizing: border-box; min-width: 0; }
 
-    .btn{
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:12px;
-      font-weight:800;
-      cursor:pointer;
-      transition:.15s ease;
-      white-space:nowrap;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(15,23,42,.10); }
-    .btn:active{ transform: translateY(0); box-shadow:none; }
-    .btn.small{ padding:8px 10px; border-radius:10px; font-size:13px; font-weight:800; }
-
-    .btn.secondary{
-      background:#f1f5f9;
-      border-color:#d8e0ea;
-      color:#0f172a;
-    }
-    .btn.secondary:hover{
-      background:#e8eef6;
-      border-color:#cbd5e1;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
     }
 
-    .actions{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-      margin-top:10px;
-      align-items:center;
-    }
-    @media (max-width: 700px){
-      .actions{ grid-template-columns: 1fr; }
+    body { line-height: 1.32; }
+
+    .page {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 10px 14px 16px;
     }
 
-    .row2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      align-items:start;
-      margin-bottom:14px;
-    }
-    @media (max-width: 620px){
-      .row2{ grid-template-columns: 1fr; }
-    }
-    .row1{ margin-bottom:14px; }
-
-    .field label{
-      display:flex; align-items:baseline; justify-content:space-between;
-      gap:10px;
-      font-weight:900;
-      font-size:13px;
-      margin-bottom:6px;
-    }
-    .field .hint{ font-weight:800; font-size:12px; color:var(--muted); }
-    .field input, .field select, .field textarea{
-      width:100%;
-      padding:12px 12px;
-      border:1px solid #cfd7e3;
-      border-radius:12px;
-      font-size:15px;
-      font-weight:900;
-      outline:none;
-      transition:.15s ease;
-      background:#fff;
-      color:var(--text);
-    }
-    .field textarea{
-      font-weight:800;
-      min-height:86px;
-      resize:vertical;
-    }
-    .field input:focus, .field select:focus, .field textarea:focus{
-      box-shadow: var(--glow-blue);
-      border-color:#6aa8ff;
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 8px;
     }
 
-    .footnote{
-      margin-top:12px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.35;
-    }
-    .footnote b{ color:#334155; }
-
-    .status{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px 14px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:12px;
-    }
-    .status .title{ font-weight:950; }
-    .badge{
-      border-radius:999px;
-      padding:6px 10px;
-      font-weight:950;
-      font-size:12px;
-      white-space:nowrap;
-      border:1px solid;
-    }
-    .ok{ background:var(--ok-bg); border-color:#9ee6b8; }
-    .warn{ background:var(--warn-bg); border-color:#ffd59a; }
-    .bad{ background:var(--bad-bg); border-color:#ffb4b4; }
-    .badge.ok{ color:var(--ok); }
-    .badge.warn{ color:#b45309; }
-    .badge.bad{ color:var(--bad); }
-
-    .minmax{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:10px;
-      margin-bottom:12px;
-    }
-    @media (max-width: 820px){
-      .minmax{ grid-template-columns: 1fr; }
-    }
-    .mm{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 12px;
-      background:#fff;
-    }
-    .mm .k{ font-size:12px; color:var(--muted); font-weight:950; }
-    .mm .v{ font-size:22px; font-weight:950; margin-top:4px; }
-    .mm .s{ font-size:12px; color:var(--muted); font-weight:800; margin-top:2px; }
-
-    .summary{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      margin-top:12px;
-    }
-    .summary .lead{
-      font-weight:950;
-      margin-bottom:8px;
-    }
-    .summary .lines{
-      display:grid;
-      gap:6px;
-      font-size:13px;
-      font-weight:900;
-    }
-    .summary .lines span{ color:var(--muted); font-weight:900; }
-
-    details{
-      border-top:1px solid var(--line);
-      margin-top:14px;
-      padding-top:12px;
-    }
-    summary{
-      cursor:pointer;
-      font-weight:950;
-      list-style:none;
-      display:flex; align-items:center; justify-content:space-between;
-    }
-    summary::-webkit-details-marker{ display:none; }
-
-    .calcbox{
-      margin-top:10px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size:12.5px;
-      color:#111827;
-      white-space:pre-wrap;
-      line-height:1.45;
-      overflow-wrap:anywhere;
+    h1 {
+      margin: 0 0 2px;
+      color: var(--heading);
+      font-size: clamp(28px, 3vw, 38px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      font-weight: 900;
     }
 
-    .settingsBox{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      margin-top:14px;
-    }
-    .settingsBox details{
-      border-top:none;
-      margin-top:0;
-      padding-top:0;
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      max-width: 720px;
+      line-height: 1.42;
     }
 
-    /* Steg 2: Kundedata */
-    .customerBox{
-      display:none;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      margin-top:12px;
-    }
-    .customerBox.show{ display:block; }
-    .customerInfo{
-      border:1px solid var(--line);
-      background:#f8fafc;
-      border-radius:12px;
-      padding:10px 10px;
-      font-size:12.5px;
-      color:#334155;
-      line-height:1.35;
-      margin-bottom:12px;
-      font-weight:800;
-    }
-
-    .need input, .need select, .need textarea{
-      box-shadow: var(--glow-blue);
-      border-color:#6aa8ff;
-    }
-    .badField input, .badField textarea{
-      box-shadow: var(--glow-red);
-      border-color:#ff8b8b;
-    }
-
-    .toast{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:16px;
-      background: rgba(249,115,22,.16);
-      border:1px solid rgba(249,115,22,.50);
-      color:#7c2d12;
-      padding:10px 12px;
+    .chip {
+      border: 1px solid var(--line);
+      background: #fff;
       border-radius: 999px;
-      font-weight: 950;
-      box-shadow: 0 10px 20px rgba(0,0,0,.16);
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .18s ease;
+      padding: 10px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 0.95fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .stack { display: grid; gap: 10px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .input-card {
+      background: var(--brand-dark);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 11px;
+      border: 1px solid #3b4045;
+    }
+
+    .result-card {
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .section-head h2,
+    .result-topline .title {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.1;
+      font-weight: 900;
+    }
+
+    .section-head h2 { color: #fff; }
+
+    .section-meta {
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .result-topline {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .result-topline .title { color: var(--heading); }
+
+    .sublead-dark,
+    .sublead-light {
+      margin: 0 0 10px;
+      font-size: 12px;
+      line-height: 1.42;
+    }
+
+    .sublead-dark { color: rgba(255,255,255,.78); }
+    .sublead-light {
+      color: var(--muted);
+      padding: 0 14px;
+      margin-top: 0;
+    }
+
+    .input-grid { display: grid; gap: 10px; }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .field {
+      display: grid;
+      gap: 0;
+    }
+
+    .field-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .input-shell {
+      position: relative;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.03);
+      border-radius: 12px;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .input-shell:focus-within {
+      box-shadow: 0 0 0 3px rgba(230,126,34,.16);
+      border-color: rgba(230,126,34,.45);
+    }
+
+    .input-shell input,
+    .input-shell select {
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--heading);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 0 14px;
+      appearance: none;
+    }
+
+    .select-caret {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .field-helper {
+      margin-top: 6px;
+      color: rgba(255,255,255,.78);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.42;
+    }
+
+    .toggle-card {
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+
+    .checkline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .checkline input {
+      accent-color: var(--brand-orange);
+      width: 15px;
+      height: 15px;
+    }
+
+    .help-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(230,126,34,.45);
+      background: rgba(230,126,34,.10);
+      color: #ffcf9c;
+      font-weight: 900;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    .help-btn:hover { background: rgba(230,126,34,.18); }
+
+    .tooltip {
+      display: none;
+      margin: 0 14px 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(0,0,0,.16);
+      color: #edf3f8;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tooltip.open { display: block; }
+
+    .tooltip .ex {
+      margin-top: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+      color: #e8eef6;
+      white-space: pre-wrap;
+    }
+
+    .collapse-content {
+      display: none;
+      padding: 0 14px 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .collapse-content.open { display: block; }
+
+    .btn {
+      height: 40px;
+      border: 0;
+      border-radius: var(--radius-md);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform .12s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-orange {
+      background: var(--brand-orange);
+      color: #fff;
+      border: 1px solid var(--brand-orange);
+      box-shadow: 0 8px 18px rgba(230, 126, 34, .22);
+    }
+
+    .btn-orange:hover { background: var(--brand-orange-hover); }
+
+    .btn-orange:disabled {
+      background: var(--brand-orange);
+      border-color: var(--brand-orange);
+      color: #fff;
+      opacity: .72;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--heading);
+      border: 1px solid var(--line);
+    }
+
+    .btn-secondary:hover { background: #fafafa; }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-note {
+      margin-top: 10px;
+      color: rgba(255,255,255,.78);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.42;
+    }
+
+    .status-note {
+      margin: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px 14px;
+    }
+
+    .status-note-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .status-note-title {
+      color: var(--heading);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 3px;
+    }
+
+    .status-note-text {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.42;
+    }
+
+    .status-pill {
+      min-width: 72px;
+      text-align: center;
+      border-radius: var(--radius-pill);
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status-pill.ok {
+      color: var(--ok-text);
+      background: var(--ok-bg);
+      border-color: var(--ok-border);
+    }
+
+    .status-pill.warn {
+      color: var(--warn-text);
+      background: var(--warn-bg);
+      border-color: var(--warn-border);
+    }
+
+    .error-note {
+      margin: 0 14px 10px;
+      border: 1px solid var(--error-border);
+      border-radius: 14px;
+      background: var(--error-bg);
+      padding: 12px 14px;
+      display: none;
+    }
+
+    .error-note.show { display: block; }
+
+    .error-note-title {
+      color: var(--error-text);
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 3px;
+    }
+
+    .error-note-text {
+      color: var(--error-text);
+      font-size: 12px;
+      line-height: 1.42;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 14px 12px;
+    }
+
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px 14px;
+      min-height: 82px;
+    }
+
+    .result-box.highlight {
+      border-color: var(--warn-border);
+      background: #fffaf4;
+    }
+
+    .result-box .k {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .result-box .v {
+      margin-top: 4px;
+      color: var(--heading);
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .result-box.highlight .v { color: #d28835; }
+
+    .result-box .s {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.32;
+      font-weight: 700;
+    }
+
+    .summary-label {
+      padding: 0 14px 8px;
+      color: var(--heading);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .summary-preview {
+      margin: 0 14px;
+      background: #ffffff;
+      color: var(--text);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 11px;
+      border: 1px solid var(--line);
+    }
+
+    .summary-preview .block-title {
+      color: var(--heading);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin: 0 0 10px;
+    }
+
+    .summary-preview .block-sub {
+      color: var(--heading);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin: 14px 0 6px;
+    }
+
+    .summary-preview .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .summary-preview .k {
+      font-weight: 800;
+      color: var(--heading);
+    }
+
+    .summary-preview .v {
+      font-weight: 900;
+      color: var(--heading);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .summary-preview .v.accent {
+      color: var(--brand-orange);
+    }
+
+    .summary-preview .note {
+      padding-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.42;
+    }
+
+    .summary-foot {
+      padding: 8px 14px 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.42;
+      font-weight: 700;
+    }
+
+    .note-box-wrap {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px 14px;
+    }
+
+    .note-box {
+      padding: 11px 13px;
+      border: 1px solid #cfe0e6;
+      border-radius: 14px;
+      background: var(--brand-info);
+      color: #36566a;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.42;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
       z-index: 9999;
     }
-    .toast.show{ opacity:1; }
 
-    /* OFFSCREEN PDF iframe */
-    #pdfFrame{
-      position:fixed;
-      width:1200px;
-      height:2400px;
-      left:-10000px;
-      top:0;
-      opacity:0;
-      pointer-events:none;
-      border:0;
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: min(720px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      box-shadow: 0 28px 80px rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+
+    .mhd {
+      padding: 14px 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mhd h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--heading);
+      font-weight: 900;
+    }
+
+    .mhd p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .mbd { padding: 14px 16px; }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal-grid .field-title {
+      color: var(--heading);
+    }
+
+    .modal-grid .field-helper {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .modal-grid .input-shell {
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .mft {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      background: #fff;
+    }
+
+    .x {
+      background: transparent;
+      border: 1px solid rgba(148,163,184,.55);
+      color: #334155;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .x:hover { background: #fafafa; }
+
+    @media (max-width: 1120px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 920px) {
+      .field-row,
+      .results-grid,
+      .modal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar { flex-direction: column; }
+      .btn { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-      <div class="brand"><span class="dot"></span> Leasingkalkulator</div>
-      <div class="subtitle">Veiledende kalkyle (eks. mva) → viser termin, finansiert beløp, renter og summer</div>
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <h1>Leasingkalkulator</h1>
+        <p class="lead">
+          Veiledende kalkulator som gir et estimat på månedlig leasing basert på pris, forskudd,
+          løpetid og rente. PDF kan lastes ned med eller uten firmainfo.
+        </p>
+      </div>
+      <div class="chip">Rente 7% (kan endres)</div>
     </div>
-    <div class="top-actions">
-      <label class="pill toggle" title="Når aktiv: beregner automatisk ved input.">
-        <input id="live" type="checkbox" checked />
-        Beregn ved input (live)
-      </label>
-    </div>
-  </div>
 
-  <div class="wrap">
-    <div class="grid">
-
-      <!-- INPUT -->
-      <section class="card" id="inputCard">
-        <div class="card-h">
-          <h2>Inndata</h2>
-          <button class="btn small secondary" id="btnReset" type="button">Tøm skjema</button>
-        </div>
-
-        <div class="card-b">
-          <div class="muted" style="margin-bottom:12px;">
-            Fyll inn pris og løpetid. Rente/avgifter er veiledende. Du kan kopiere en forespørsel, sende e-post eller laste ned PDF.
+    <div class="main-grid">
+      <div class="stack">
+        <section class="input-card">
+          <div class="section-head">
+            <h2>1) Legg inn tall</h2>
+            <div class="section-meta">Kr og år</div>
           </div>
 
-          <div class="row1 field" id="rowPrice">
-            <label>
-              <span>Pris på objekt (eks. mva)</span>
-              <span class="hint">kr</span>
-            </label>
-            <input id="inPrice" inputmode="numeric" placeholder="f.eks. 180000" />
-          </div>
+          <p class="sublead-dark">Enkel, tydelig og veiledende. Start gjerne med pris og løpetid.</p>
 
-          <div class="row2">
-            <div class="field" id="rowFreq">
-              <label>
-                <span>Fakturafrekvens</span>
-                <span class="hint">standard</span>
-              </label>
-              <select id="inFreq">
-                <option value="monthly" selected>Månedlig</option>
-                <option value="quarterly">Kvartalsvis</option>
-                <option value="semiannual">Halvårlig</option>
-                <option value="annual">Årlig</option>
-              </select>
-            </div>
-
-            <div class="field" id="rowRate">
-              <label>
-                <span>Nominell rente (%)</span>
-                <span class="hint">veiledende</span>
-              </label>
-              <input id="inRate" inputmode="decimal" placeholder="f.eks. 6,9" />
-            </div>
-          </div>
-
-          <div class="row2">
-            <div class="field" id="rowYears">
-              <label>
-                <span>Løpetid år</span>
-                <span class="hint">år</span>
-              </label>
-              <select id="inYears">
-                <option>2</option><option>3</option><option>4</option><option>5</option>
-                <option>6</option><option selected>7</option><option>8</option><option>9</option><option>10</option>
-              </select>
-            </div>
-
-            <div class="field" id="rowMonths">
-              <label>
-                <span>+ måneder</span>
-                <span class="hint">mnd</span>
-              </label>
-              <select id="inMonths">
-                <option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-                <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row2">
-            <div class="field" id="rowDown">
-              <label>
-                <span>Startleie / forskudd</span>
-                <span class="hint">kr (valgfritt)</span>
-              </label>
-              <input id="inDown" inputmode="numeric" placeholder="f.eks. 0" />
-            </div>
-
-            <div class="field" id="rowTrade">
-              <label>
-                <span>Forskudd fra innbytte</span>
-                <span class="hint">kr (valgfritt)</span>
-              </label>
-              <input id="inTrade" inputmode="numeric" placeholder="f.eks. 0" />
-            </div>
-          </div>
-
-          <div class="settingsBox">
-            <details id="detailsSettings">
-              <summary>
-                <span>Flere innstillinger</span>
-                <span class="muted">mva / gebyr</span>
-              </summary>
-
-              <div class="row2" style="margin-top:12px;">
-                <div class="field" id="rowVat">
-                  <label>
-                    <span>Mva-sats (%)</span>
-                    <span class="hint">standard 25</span>
-                  </label>
-                  <input id="inVat" inputmode="decimal" value="25" />
+          <div class="input-grid">
+            <div class="field-row">
+              <div class="field">
+                <div class="field-title">Pris på objekt (kr, eks. mva)</div>
+                <div class="input-shell">
+                  <input id="price" type="text" inputmode="numeric" placeholder="F.eks. 350000" />
                 </div>
-
-                <div class="field" id="rowFeeStart">
-                  <label>
-                    <span>Etableringsgebyr</span>
-                    <span class="hint">kr (valgfritt)</span>
-                  </label>
-                  <input id="inFeeStart" inputmode="numeric" placeholder="f.eks. 0" />
-                </div>
+                <div class="field-helper">Skriv inn prisen du ønsker å lease (eks. mva).</div>
               </div>
 
-              <div class="row2">
-                <div class="field" id="rowFeePer">
-                  <label>
-                    <span>Termingebyr per faktura</span>
-                    <span class="hint">kr (valgfritt)</span>
-                  </label>
-                  <input id="inFeePer" inputmode="numeric" placeholder="f.eks. 0" />
+              <div class="field">
+                <div class="field-title">Egenkapital / forskudd (kr)</div>
+                <div class="input-shell">
+                  <input id="deposit" type="text" inputmode="numeric" placeholder="F.eks. 50000" />
                 </div>
+                <div class="field-helper">Trekkes fra før leasing beregnes.</div>
+              </div>
+            </div>
 
-                <div class="field">
-                  <label><span>&nbsp;</span><span class="hint">&nbsp;</span></label>
-                  <div class="muted" style="padding:10px 0 0;">
-                    Gebyr kan variere mellom leasingpartnere.
+            <div class="field-row">
+              <div class="field">
+                <div class="field-title">Løpetid (år)</div>
+                <div class="input-shell">
+                  <select id="termYears">
+                    <option value="3">3 år</option>
+                    <option value="4">4 år</option>
+                    <option value="5" selected>5 år</option>
+                    <option value="6">6 år</option>
+                    <option value="7">7 år</option>
+                  </select>
+                  <span class="select-caret">▾</span>
+                </div>
+                <div class="field-helper">Vanlig er 3–5 år.</div>
+              </div>
+
+              <div class="field">
+                <div class="field-title">Rente (årlig nominell %)</div>
+                <div class="input-shell">
+                  <input id="rate" type="text" inputmode="decimal" value="7" placeholder="7" />
+                </div>
+                <div class="field-helper">Standard er 7%, men du kan endre.</div>
+              </div>
+            </div>
+
+            <div class="toggle-card">
+              <div class="toggle-row">
+                <label class="checkline" for="enableBuyout">
+                  <input id="enableBuyout" type="checkbox" />
+                  <span>Legg til utkjøpspris ved utløp</span>
+                </label>
+                <button class="help-btn" id="helpBtn" type="button" aria-label="Hva betyr utkjøpspris?">?</button>
+              </div>
+
+              <div class="tooltip" id="helpTip">
+                <strong>Hva betyr utkjøpspris ved utløp?</strong><br>
+                Utkjøpspris er beløpet som kan gjenstå når leasingperioden er ferdig. Ofte kan du velge å kjøpe objektet,
+                refinansiere eller selge.
+                <div class="ex" id="helpExample"></div>
+              </div>
+
+              <div class="collapse-content" id="buyoutFields">
+                <div class="field-row" style="padding-top:12px;">
+                  <div class="field">
+                    <div class="field-title">Utkjøpspris ved utløp (kr)</div>
+                    <div class="input-shell">
+                      <input id="buyout" type="text" inputmode="numeric" placeholder="F.eks. 70000" />
+                    </div>
+                    <div class="field-helper">Valgfritt sluttbeløp etter leasingperioden.</div>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-title">Forslag (valgfritt)</div>
+                    <div class="input-shell">
+                      <select id="buyoutPreset">
+                        <option value="" selected>Velg et forslag…</option>
+                        <option value="pct">Bruk standard % (auto)</option>
+                        <option value="custom">Jeg skriver inn selv</option>
+                      </select>
+                      <span class="select-caret">▾</span>
+                    </div>
+                    <div class="field-helper">Standard % foreslår utkjøpspris basert på løpetid.</div>
                   </div>
                 </div>
               </div>
-            </details>
+            </div>
+
+            <div class="toolbar">
+              <button id="resetBtn" class="btn btn-secondary" type="button">Nullstill</button>
+              <button id="copyBtn" class="btn btn-orange" type="button">Kopier sammendrag</button>
+              <button id="pdfBtn" class="btn btn-orange" type="button">Last ned PDF</button>
+              <button id="pdfNoInfoBtn" class="btn btn-orange" type="button">PDF uten firmainfo</button>
+            </div>
+
+            <div class="toolbar-note">
+              Merk: Dette er et veiledende estimat. Endelig leasingtilbud kan avvike basert på vilkår og kredittvurdering.
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card result-card">
+          <div class="result-topline">
+            <div class="title">2) Resultat (veiledende)</div>
           </div>
 
-          <!-- STEG 2: Kundedata (skjult til Kopier/Send trykkes) -->
-          <div class="customerBox" id="customerBox">
-            <div class="customerInfo">
-              For å opprette søknad hos relevant finanspartner trenger vi kundeinformasjonen under.
-              Denne informasjonen legges ved i forespørselen som sendes inn.
-            </div>
+          <p class="sublead-light">Oppdateres automatisk når du endrer feltene.</p>
 
-            <div class="row2">
-              <div class="field" id="rowOrg">
-                <label>
-                  <span>Orgnummer</span>
-                  <span class="hint">obligatorisk</span>
-                </label>
-                <input id="cOrg" inputmode="numeric" placeholder="f.eks. 999888777" />
+          <div class="status-note">
+            <div class="status-note-top">
+              <div>
+                <div id="bannerTitle" class="status-note-title">Klar til beregning</div>
+                <div id="bannerText" class="status-note-text">Legg inn tall for å se estimat og vurdering.</div>
               </div>
-
-              <div class="field" id="rowFirm">
-                <label>
-                  <span>Firmanavn</span>
-                  <span class="hint">obligatorisk</span>
-                </label>
-                <input id="cFirm" placeholder="f.eks. Eksempel AS" />
-              </div>
-            </div>
-
-            <div class="row2">
-              <div class="field" id="rowPerson">
-                <label>
-                  <span>Kontaktperson</span>
-                  <span class="hint">obligatorisk</span>
-                </label>
-                <input id="cPerson" placeholder="f.eks. Ola Nordmann" />
-              </div>
-
-              <div class="field" id="rowEmail">
-                <label>
-                  <span>E-post</span>
-                  <span class="hint">obligatorisk</span>
-                </label>
-                <input id="cEmail" inputmode="email" placeholder="f.eks. ola@firma.no" />
-              </div>
-            </div>
-
-            <div class="row2" style="margin-bottom:0;">
-              <div class="field" id="rowPhone">
-                <label>
-                  <span>Telefon</span>
-                  <span class="hint">obligatorisk</span>
-                </label>
-                <input id="cPhone" inputmode="tel" placeholder="f.eks. 900 00 000" />
-              </div>
-
-              <div class="field" id="rowMsg">
-                <label>
-                  <span>Kommentar (valgfritt)</span>
-                  <span class="hint">valgfritt</span>
-                </label>
-                <textarea id="cMsg" placeholder="Evt. ekstra informasjon (valgfritt)"></textarea>
-              </div>
+              <div id="bannerStatus" class="status-pill">—</div>
             </div>
           </div>
 
-          <div class="actions">
-            <button class="btn secondary" id="btnCopy" type="button">Kopier forespørsel</button>
-            <a class="btn secondary" id="btnSend" href="#" role="button">Send forespørsel</a>
-            <button class="btn secondary" id="btnPdf" type="button">Last ned PDF</button>
+          <div id="calcError" class="error-note">
+            <div class="error-note-title">Må justeres</div>
+            <div id="calcErrorText" class="error-note-text"></div>
           </div>
 
-          <div class="footnote">
-            <b>Merk:</b> Beregningen er veiledende og forutsetter kredittgodkjenning. Rente varierer med kredittvurdering og finanspartner. Endelig tilbud fastsettes av finanspartner.<br/>
-            <b>Avrunding:</b> beløp rundes <b>opp</b> til nærmeste <b>100 kr</b> i visning.
-          </div>
-        </div>
-      </section>
-
-      <!-- RESULT -->
-      <section class="card" id="resultCard">
-        <div class="card-h">
-          <h2>Resultat</h2>
-          <div></div>
-        </div>
-
-        <div class="card-b">
-          <div class="status" id="statusBox">
-            <div>
-              <div class="title" id="statusTitle">Mangler tall</div>
-              <div class="muted" id="statusText">Fyll inn pris (eks. mva), rente og løpetid for å beregne termin.</div>
+          <div class="results-grid">
+            <div class="result-box highlight">
+              <div class="k">Estimert pr. måned</div>
+              <div id="kpiMonthly" class="v">0 kr</div>
+              <div id="kpiModeHint" class="s">Beregnet uten utkjøpspris</div>
             </div>
-            <div class="badge warn" id="statusBadge">INFO</div>
-          </div>
 
-          <div class="minmax">
-            <div class="mm">
-              <div class="k">Estimert termin (eks. mva)</div>
-              <div class="v" id="outTermEx">—</div>
-              <div class="s">inkl. termingebyr per faktura</div>
+            <div class="result-box highlight">
+              <div class="k">Finansiert beløp</div>
+              <div id="kpiFinanced" class="v">0 kr</div>
+              <div class="s">Pris minus forskudd</div>
             </div>
-            <div class="mm">
-              <div class="k">Finansiert beløp (eks. mva)</div>
-              <div class="v" id="outFin">—</div>
-              <div class="s">pris − forskudd − innbytte (+ etablering)</div>
+
+            <div class="result-box">
+              <div class="k">Rente pr. år</div>
+              <div id="kpiRate" class="v">7 %</div>
+              <div class="s">Nominell rente brukt i beregning</div>
             </div>
-            <div class="mm">
+
+            <div class="result-box">
               <div class="k">Løpetid</div>
-              <div class="v" id="outTermCount">—</div>
-              <div class="s">antall terminer etter frekvens</div>
+              <div id="kpiTerm" class="v">5 år</div>
+              <div class="s">Valgt leasingperiode</div>
             </div>
           </div>
 
-          <div class="summary">
-            <div class="lead">Oppsummering</div>
-            <div class="lines" id="sumLines">
-              <div><span>Tips:</span> Fyll inn tall for å få en enkel konklusjon her.</div>
+          <div class="summary-label">Sammendrag</div>
+
+          <div class="summary-preview">
+            <div id="summaryBox">
+              <div class="block-title">Leasingkalkulator – veiledende sammendrag</div>
+              <div class="row">
+                <div class="k">Ingen data ennå</div>
+                <div class="v">—</div>
+              </div>
             </div>
           </div>
 
-          <details id="detailsCalc" style="margin-top:14px;">
-            <summary>
-              <span>Vis beregning</span>
-              <span class="muted">detaljer</span>
-            </summary>
-            <div class="calcbox" id="calcText">—</div>
-          </details>
+          <div class="summary-foot">Sammendrag kan kopieres eller blir med i PDF.</div>
+        </section>
 
-          <!-- FJERNET: kommentarfeltet på høyre side (Kommentar (valgfritt) til forespørsel) -->
-        </div>
-      </section>
-
+        <section class="note-box-wrap">
+          <div class="note-box">
+            Denne kalkulatoren er veiledende etter generelle regler.
+            Kontroller alltid opp mot avtalevilkår, finanspartner og andre begrensninger.
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 
-  <div class="toast" id="toast">OK ✅</div>
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="mhd">
+        <div>
+          <h3 id="modalTitle">Last ned PDF med firmainfo</h3>
+          <p>Fyll inn firmainformasjon under. Dette blir med i PDF og i kopiert sammendrag.</p>
+        </div>
+        <button class="x" id="closeModal" type="button" aria-label="Lukk">✕</button>
+      </div>
 
-  <!-- PDF libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      <div class="mbd">
+        <div class="modal-grid">
+          <div class="field">
+            <div class="field-title">Firmanavn</div>
+            <div class="input-shell">
+              <input id="cCompany" type="text" placeholder="F.eks. Traktor og Maskin AS" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-title">Org.nr</div>
+            <div class="input-shell">
+              <input id="cOrg" type="text" inputmode="numeric" placeholder="9 siffer" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-title">Kontaktperson</div>
+            <div class="input-shell">
+              <input id="cName" type="text" placeholder="Navn" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-title">E-post</div>
+            <div class="input-shell">
+              <input id="cEmail" type="email" inputmode="email" placeholder="navn@firma.no" />
+            </div>
+          </div>
+
+          <div class="field" style="grid-column:1 / -1;">
+            <div class="field-title">Telefon</div>
+            <div class="input-shell">
+              <input id="cPhone" type="tel" inputmode="tel" placeholder="f.eks. 900 00 000" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mft">
+        <button class="btn btn-secondary" id="cancelPdf" type="button">Avbryt</button>
+        <button class="btn btn-orange" id="confirmPdf" type="button">Last ned PDF</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const $ = (id) => document.getElementById(id);
+    const el = (id) => document.getElementById(id);
 
-    // Valg 1: mailto uten vedlegg / uten auto-PDF nedlasting ved Send forespørsel
-    const MAIL_TO = "tm@traktorogmaskin.no";
-    const STORAGE_KEY = 'leaseCalc_v10';
+    const inputs = {
+      price: el('price'),
+      deposit: el('deposit'),
+      termYears: el('termYears'),
+      rate: el('rate'),
+      enableBuyout: el('enableBuyout'),
+      buyout: el('buyout'),
+      buyoutPreset: el('buyoutPreset')
+    };
 
-    function rawTrim(v){ return String(v ?? '').trim().replace(/\s+/g,''); }
-    function toNumber(v){
-      const s0 = rawTrim(v);
-      if (s0 === '') return NaN;
-      const s = s0.replace(',', '.');
-      const n = Number(s);
+    const modal = {
+      back: el('modalBackdrop'),
+      close: el('closeModal'),
+      cancel: el('cancelPdf'),
+      confirm: el('confirmPdf'),
+      company: el('cCompany'),
+      org: el('cOrg'),
+      name: el('cName'),
+      email: el('cEmail'),
+      phone: el('cPhone')
+    };
+
+    const ui = {
+      helpBtn: el('helpBtn'),
+      helpTip: el('helpTip'),
+      helpExample: el('helpExample'),
+      buyoutFields: el('buyoutFields')
+    };
+
+    const out = {
+      bannerTitle: el('bannerTitle'),
+      bannerText: el('bannerText'),
+      bannerStatus: el('bannerStatus'),
+      calcError: el('calcError'),
+      calcErrorText: el('calcErrorText'),
+      kpiMonthly: el('kpiMonthly'),
+      kpiFinanced: el('kpiFinanced'),
+      kpiRate: el('kpiRate'),
+      kpiTerm: el('kpiTerm'),
+      kpiModeHint: el('kpiModeHint'),
+      summaryBox: el('summaryBox')
+    };
+
+    const btn = {
+      reset: el('resetBtn'),
+      copy: el('copyBtn'),
+      pdf: el('pdfBtn'),
+      pdfNoInfo: el('pdfNoInfoBtn')
+    };
+
+    function toNumber(value) {
+      if (typeof value !== 'string') value = String(value ?? '');
+      const cleaned = value
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(/\.(?=\d{3}(\D|$))/g, '')
+        .replace(/,(?=\d{3}(\D|$))/g, '')
+        .replace(',', '.');
+
+      if (!cleaned) return NaN;
+      const n = Number(cleaned);
       return Number.isFinite(n) ? n : NaN;
     }
-    function ceil100(x){
-      if (!Number.isFinite(x)) return NaN;
-      return Math.ceil(x / 100) * 100;
+
+    function asZero(x) {
+      return Number.isFinite(x) ? x : 0;
     }
-    function fmtMoney(n){
+
+    function fmtNOK(n) {
       if (!Number.isFinite(n)) return '—';
-      return Math.round(n).toLocaleString('no-NO') + ' kr';
+      return new Intl.NumberFormat('nb-NO', {
+        style: 'currency',
+        currency: 'NOK',
+        maximumFractionDigits: 0
+      }).format(n);
     }
-    function fmtCount(n){
+
+    function fmtPlainNOK(n) {
       if (!Number.isFinite(n)) return '—';
-      return Math.round(n).toLocaleString('no-NO');
-    }
-    function showToast(msg){
-      const t = $('toast');
-      t.textContent = msg || 'OK ✅';
-      t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'), 1600);
-    }
-    function nowStamp(){
-      const d = new Date();
-      const pad = (n)=>String(n).padStart(2,'0');
-      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      return new Intl.NumberFormat('nb-NO', {
+        maximumFractionDigits: 0
+      }).format(n) + ' kr';
     }
 
-    function periodsPerYear(freq){
-      if (freq === 'monthly') return 12;
-      if (freq === 'quarterly') return 4;
-      if (freq === 'semiannual') return 2;
-      return 1;
-    }
-    function freqLabel(freq){
-      if (freq === 'monthly') return 'per måned';
-      if (freq === 'quarterly') return 'per kvartal';
-      if (freq === 'semiannual') return 'per halvår';
-      return 'per år';
-    }
-    function freqTxt(freq){
-      return (freq === 'monthly') ? 'Månedlig'
-        : (freq === 'quarterly') ? 'Kvartalsvis'
-        : (freq === 'semiannual') ? 'Halvårlig'
-        : 'Årlig';
+    function fmtPct(n) {
+      if (!Number.isFinite(n)) return '—';
+      return new Intl.NumberFormat('nb-NO', {
+        maximumFractionDigits: 2
+      }).format(n) + ' %';
     }
 
-    function annuity(P, r, n){
-      if (!Number.isFinite(P) || P < 0) return NaN;
-      if (!Number.isFinite(r) || r < 0) r = 0;
-      if (!Number.isFinite(n) || n <= 0) return NaN;
-      if (r === 0) return P / n;
-      return P * (r / (1 - Math.pow(1 + r, -n)));
+    function normalizeOrg(org) {
+      return (org || '').replace(/\s+/g, '').replace(/[^\d]/g, '');
     }
 
-    function setBadge(kind, text){
-      const b = $('statusBadge');
-      b.classList.remove('ok','warn','bad');
-      b.classList.add(kind);
-      b.textContent = text;
+    function validEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim());
     }
 
-    function resetGlow(){
-      ['rowPrice','rowRate','rowYears','rowMonths','rowOrg','rowFirm','rowPerson','rowEmail','rowPhone'].forEach(id=>{
-        const el = $(id);
-        if (!el) return;
-        el.classList.remove('need','badField');
-      });
+    function defaultBuyoutPct(years) {
+      const map = { 3: 0.30, 4: 0.25, 5: 0.20, 6: 0.15, 7: 0.10 };
+      return map[years] ?? 0.20;
     }
 
-    function computeAll(){
-      const price = toNumber($('inPrice').value);
-      const ratePct = toNumber($('inRate').value);
-      const years = toNumber($('inYears').value);
-      const monthsExtra = toNumber($('inMonths').value);
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
-      const down = toNumber($('inDown').value);
-      const trade = toNumber($('inTrade').value);
+    function showError(msg) {
+      out.calcError.classList.add('show');
+      out.calcErrorText.textContent = msg;
+      out.bannerTitle.textContent = 'Må justeres';
+      out.bannerText.textContent = msg;
+      out.bannerStatus.textContent = 'Ikke OK';
+      out.bannerStatus.className = 'status-pill warn';
+      return null;
+    }
 
-      const vatPct = toNumber($('inVat').value);
-      const feeStart = toNumber($('inFeeStart').value);
-      const feePer = toNumber($('inFeePer').value);
+    function clearError() {
+      out.calcError.classList.remove('show');
+      out.calcErrorText.textContent = '';
+    }
 
-      const freq = $('inFreq').value;
-      const ppy = periodsPerYear(freq);
+    function updateHelpExample() {
+      const price = Math.max(0, asZero(toNumber(inputs.price.value)));
+      const years = parseInt(inputs.termYears.value, 10) || 5;
+      const suggested = Math.round(price * defaultBuyoutPct(years));
+      const financed = Math.max(0, price - suggested);
 
-      const totalMonths = (Number.isFinite(years)? years*12 : 0) + (Number.isFinite(monthsExtra)? monthsExtra : 0);
-      const n = Math.max(0, Math.round((totalMonths/12) * ppy));
+      ui.helpExample.textContent =
+`Eksempel:
+Pris ${new Intl.NumberFormat('nb-NO').format(price || 350000)} kr
+Løpetid ${years} år
+Utkjøpspris ${new Intl.NumberFormat('nb-NO').format(price ? suggested : 70000)} kr
+⇒ Leasing beregnes på ${new Intl.NumberFormat('nb-NO').format(price ? financed : 280000)} kr i perioden`;
+    }
 
-      const nominal = Number.isFinite(ratePct) ? Math.max(0, ratePct/100) : NaN;
-      const r = Number.isFinite(nominal) ? (nominal / ppy) : NaN;
+    function getCalcData() {
+      clearError();
 
-      const dp = Number.isFinite(down) ? Math.max(0, down) : 0;
-      const ti = Number.isFinite(trade) ? Math.max(0, trade) : 0;
+      const price = asZero(toNumber(inputs.price.value));
+      const deposit = asZero(toNumber(inputs.deposit.value));
+      const years = parseInt(inputs.termYears.value, 10);
+      const rateAnnualPct = toNumber(inputs.rate.value);
 
-      const est = Number.isFinite(feeStart) ? Math.max(0, feeStart) : 0;
-      const perFee = Number.isFinite(feePer) ? Math.max(0, feePer) : 0;
+      if (!Number.isFinite(rateAnnualPct) || rateAnnualPct < 0 || rateAnnualPct > 40) {
+        return showError('Rente må være mellom 0 og 40%.');
+      }
+      if (price < 0) return showError('Pris kan ikke være negativ.');
+      if (deposit < 0) return showError('Forskudd kan ikke være negativt.');
+      if (deposit > price) return showError('Forskudd kan ikke være større enn pris.');
 
-      const vat = Number.isFinite(vatPct) ? Math.max(0, vatPct/100) : 0.25;
+      const financed = price - deposit;
+      const months = years * 12;
+      const r = (rateAnnualPct / 100) / 12;
 
-      let financed = NaN;
-      if (Number.isFinite(price)){
-        financed = Math.max(0, price - dp - ti + est);
+      const buyoutOn = inputs.enableBuyout.checked;
+      let buyout = 0;
+
+      if (buyoutOn) {
+        buyout = asZero(toNumber(inputs.buyout.value));
+        if (buyout < 0) return showError('Utkjøpspris kan ikke være negativ.');
+        if (buyout >= financed && financed > 0) return showError('Utkjøpspris må være lavere enn finansiert beløp.');
       }
 
-      let termBase = NaN;
-      if (Number.isFinite(financed) && Number.isFinite(r) && Number.isFinite(n) && n > 0){
-        termBase = annuity(financed, r, n);
+      let monthly = 0;
+
+      if (financed === 0) {
+        monthly = 0;
+      } else if (!buyoutOn) {
+        if (r === 0) {
+          monthly = financed / months;
+        } else {
+          monthly = financed * (r / (1 - Math.pow(1 + r, -months)));
+        }
+      } else {
+        if (r === 0) {
+          monthly = (financed - buyout) / months;
+        } else {
+          const pvBuyout = buyout / Math.pow(1 + r, months);
+          const pvAmort = financed - pvBuyout;
+          monthly = pvAmort * (r / (1 - Math.pow(1 + r, -months)));
+        }
       }
-
-      const termEx = Number.isFinite(termBase) ? (termBase + perFee) : NaN;
-      const termExRounded = ceil100(termEx);
-      const termIncRounded = Number.isFinite(termExRounded) ? ceil100(termExRounded * (1 + vat)) : NaN;
-
-      const totalEx = Number.isFinite(termExRounded) ? (termExRounded * n) : NaN;
-
-      const interestEx = (Number.isFinite(termBase) && Number.isFinite(financed))
-        ? Math.max(0, (termBase * n) - financed)
-        : NaN;
 
       return {
-        price, ratePct, years, monthsExtra, totalMonths,
-        dp, ti, vatPct, vat, est, perFee,
-        freq, ppy, n, r,
+        price,
+        deposit,
         financed,
-        termBase,
-        termExRounded, termIncRounded,
-        totalEx,
-        interestEx
+        years,
+        months,
+        rateAnnualPct,
+        monthly,
+        buyoutOn,
+        buyout
       };
     }
 
-    function updateUI(){
-      const c = computeAll();
+    function getCompanyInfo() {
+      return {
+        company: (modal.company.value || '').trim(),
+        org: normalizeOrg(modal.org.value || ''),
+        name: (modal.name.value || '').trim(),
+        email: (modal.email.value || '').trim(),
+        phone: (modal.phone.value || '').trim()
+      };
+    }
 
-      resetGlow();
+    function validateCompanyInfo() {
+      const info = getCompanyInfo();
+      const errs = [];
 
-      const needPrice = !(Number.isFinite(c.price) && c.price > 0);
-      const needRate = !(Number.isFinite(c.ratePct) && c.ratePct >= 0);
-      const needTerm = !(Number.isFinite(c.n) && c.n > 0);
+      if (info.company.length < 2) errs.push('Firmanavn må fylles ut.');
+      if (info.org.length !== 9) errs.push('Org.nr må være 9 siffer.');
+      if (info.name.length < 2) errs.push('Kontaktperson må fylles ut.');
+      if (!validEmail(info.email)) errs.push('E-post er ikke gyldig.');
+      if ((info.phone || '').replace(/\D/g, '').length < 8) errs.push('Telefon må være minst 8 siffer.');
 
-      if (needPrice) $('rowPrice').classList.add('need');
-      if (needRate) $('rowRate').classList.add('need');
-      if (needTerm){
-        $('rowYears').classList.add('need');
-        $('rowMonths').classList.add('need');
-      }
+      if (errs.length) return { ok: false, message: errs.join(' ') };
+      return { ok: true, info };
+    }
 
-      const okReady = !needPrice && !needRate && !needTerm;
-
-      if (!okReady){
-        $('statusTitle').textContent = 'Mangler tall';
-        $('statusText').textContent = 'Fyll inn pris (eks. mva), rente og løpetid for å beregne termin.';
-        setBadge('warn','INFO');
-      } else {
-        $('statusTitle').textContent = 'Beregnet';
-        $('statusText').textContent = 'Veiledende terminbeløp og summer er beregnet fra dine inndata.';
-        setBadge('ok','OK');
-      }
-
-      $('outTermEx').textContent = Number.isFinite(c.termExRounded) ? fmtMoney(c.termExRounded) : '—';
-      $('outFin').textContent = Number.isFinite(c.financed) ? fmtMoney(ceil100(c.financed)) : '—';
-
-      $('outTermCount').textContent = (Number.isFinite(c.n) && c.n>0)
-        ? `${fmtCount(c.n)} terminer (${freqLabel(c.freq)})`
-        : '—';
-
-      const sum = $('sumLines');
-      sum.innerHTML = '';
-
-      if (!okReady){
-        const d = document.createElement('div');
-        d.innerHTML = `<span>Tips:</span> Fyll inn tall for å få en enkel konklusjon her.`;
-        sum.appendChild(d);
-      } else {
-        const a = document.createElement('div');
-        a.innerHTML = `<span>Estimert termin:</span> <b>${fmtMoney(c.termExRounded)}</b> ${freqLabel(c.freq)} (eks. mva).`;
-        sum.appendChild(a);
-
-        const b = document.createElement('div');
-        b.innerHTML = `<span>Finansiert beløp:</span> <b>${fmtMoney(ceil100(c.financed))}</b> (eks. mva).`;
-        sum.appendChild(b);
-      }
-
+    function buildSummaryText(data, contact) {
       const lines = [];
-      lines.push(`BEREGNING (veiledende):`);
-      lines.push(`- Finansiert beløp = pris − forskudd − innbytte + etablering`);
-      lines.push(`- Termin = annuitet(finansiert beløp, rente per termin, antall terminer) + termingebyr`);
-      lines.push(`- Renter i perioden ≈ (sum terminer uten termingebyr) − finansiert beløp`);
-      lines.push(`- Avrunding opp til nærmeste 100 kr i visning.`);
-      lines.push(``);
-      lines.push(`Merk: Gebyr og rente kan variere mellom leasingpartnere. Endelig tilbud fastsettes av finanspartner.`);
-      $('calcText').textContent = lines.join('\n');
+      lines.push('LEASINGKALKULATOR – VEILEDENDE SAMMENDRAG');
+      lines.push('');
+      lines.push('FIRMAOPPLYSNINGER');
 
-      saveState();
-    }
-
-    // ---------- Steg 2 ----------
-    function ensureCustomerBoxVisible(){
-      const box = $('customerBox');
-      if (!box.classList.contains('show')){
-        box.classList.add('show');
-        setTimeout(() => box.scrollIntoView({ behavior:'smooth', block:'start' }), 0);
-      }
-    }
-
-    function isEmail(v){
-      const s = String(v||'').trim();
-      if (!s) return false;
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-    }
-
-    function validateCustomerFields(){
-      resetGlow();
-
-      const req = [
-        {row:'rowOrg', ok: () => String($('cOrg').value||'').replace(/\s+/g,'').length >= 6},
-        {row:'rowFirm', ok: () => String($('cFirm').value||'').trim().length >= 2},
-        {row:'rowPerson', ok: () => String($('cPerson').value||'').trim().length >= 2},
-        {row:'rowEmail', ok: () => isEmail($('cEmail').value)},
-        {row:'rowPhone', ok: () => String($('cPhone').value||'').replace(/\D+/g,'').length >= 6},
-      ];
-
-      let allOk = true;
-      for (const r of req){
-        const ok = r.ok();
-        if (!ok){
-          allOk = false;
-          $(r.row).classList.add('badField');
-        }
-      }
-      return allOk;
-    }
-
-    // Intro i mail
-    function mailIntroBlock(){
-      return [
-        "Henvendelse fra kunde via Traktor og Maskin leasingkalkulator.",
-        "Forespørselen registreres og sendes videre til relevant leasingpartner via leasingportal for videre behandling."
-      ].join(" ");
-    }
-
-    // ✅ Nå finnes kun ett kommentarfelt igjen: cMsg
-    function getMergedMessage(){
-      return String($('cMsg')?.value ?? '').trim();
-    }
-
-    function getCustomerBlock(){
-      const org = String($('cOrg').value||'').trim();
-      const firm = String($('cFirm').value||'').trim();
-      const person = String($('cPerson').value||'').trim();
-      const email = String($('cEmail').value||'').trim();
-      const phone = String($('cPhone').value||'').trim();
-
-      return [
-        mailIntroBlock(),
-        "",
-        "Kundeinformasjon",
-        "----------------",
-        `Orgnummer: ${org || '—'}`,
-        `Firmanavn: ${firm || '—'}`,
-        `Kontaktperson: ${person || '—'}`,
-        `E-post: ${email || '—'}`,
-        `Telefon: ${phone || '—'}`
-      ].join("\n");
-    }
-
-    function buildCopyText(){
-      const c = computeAll();
-      const mergedMessage = getMergedMessage();
-
-      const termTxt = Number.isFinite(c.termExRounded) ? String(Math.round(c.termExRounded).toLocaleString('no-NO')) : '—';
-      const finTxt  = Number.isFinite(c.financed) ? String(Math.round(ceil100(c.financed)).toLocaleString('no-NO')) : '—';
-      const intTxt  = Number.isFinite(c.interestEx) ? String(Math.round(ceil100(c.interestEx)).toLocaleString('no-NO')) : '—';
-      const sumTxt  = Number.isFinite(c.totalEx) ? String(Math.round(ceil100(c.totalEx)).toLocaleString('no-NO')) : '—';
-
-      const parts = [];
-      parts.push(`Leasingforespørsel (${nowStamp()})`);
-      parts.push(``);
-      parts.push(getCustomerBlock());
-      parts.push(``);
-
-      // ✅ Output-overskrift: Kommentar (valgfritt)
-      parts.push(`Kommentar (valgfritt)`);
-      parts.push(`---------------------`);
-      parts.push(mergedMessage ? mergedMessage : '—');
-      parts.push(``);
-
-      parts.push(`Leasingforespørsel (veiledende)`);
-      parts.push(`--------------------------------`);
-      parts.push(`Tidspunkt: ${nowStamp()}`);
-      parts.push(``);
-      parts.push(`Pris (eks. mva): ${Number.isFinite(c.price)? Math.round(c.price).toLocaleString('no-NO') : '—'} kr`);
-      parts.push(`Fakturafrekvens: ${freqTxt(c.freq)}`);
-      parts.push(`Løpetid: ${c.totalMonths} måneder (${c.n} terminer)`);
-      parts.push(`Nominell rente brukt i kalkyle: ${Number.isFinite(c.ratePct)? String(c.ratePct).replace('.', ',') : '—'} %`);
-      parts.push(`Startleie/forskudd: ${Math.round(c.dp || 0).toLocaleString('no-NO')} kr`);
-      parts.push(`Forskudd fra innbytte: ${Math.round(c.ti || 0).toLocaleString('no-NO')} kr`);
-      parts.push(`Etableringsgebyr: ${Math.round(c.est || 0).toLocaleString('no-NO')} kr`);
-      parts.push(`Termingebyr per faktura: ${Math.round(c.perFee || 0).toLocaleString('no-NO')} kr`);
-      parts.push(`Mva-sats: ${((c.vat||0)*100).toFixed(2).replace('.', ',')} %`);
-      parts.push(``);
-      parts.push(`Estimert termin (eks. mva): ${termTxt} kr`);
-      parts.push(`Finansiert beløp (eks. mva): ${finTxt} kr`);
-      parts.push(`Renter i perioden (eks. mva): ${intTxt} kr`);
-      parts.push(`Sum terminer (eks. mva): ${sumTxt} kr`);
-      parts.push(``);
-      parts.push(`Merk: "Sum betalinger" viser terminer. Etablering og termingebyr kan variere mellom leasingpartnere. Endelig tilbud fastsettes av finanspartner.`);
-
-      return parts.join('\n');
-    }
-
-    async function copyRequest(){
-      updateUI();
-      ensureCustomerBoxVisible();
-
-      if (!validateCustomerFields()){
-        showToast('Fyll inn kundeinfo ❗');
-        return;
+      if (contact) {
+        lines.push(`Firmanavn: ${contact.company}`);
+        lines.push(`Org.nr: ${contact.org}`);
+        lines.push(`Kontaktperson: ${contact.name}`);
+        lines.push(`E-post: ${contact.email}`);
+        lines.push(`Telefon: ${contact.phone}`);
+      } else {
+        lines.push('Firmaopplysninger er ikke oppgitt.');
       }
 
-      const text = buildCopyText();
-      try{
-        await navigator.clipboard.writeText(text);
-        showToast('Kopiert ✅');
+      lines.push('');
+      lines.push('BEREGNING');
+      lines.push(`Pris (eks. mva): ${fmtPlainNOK(data.price)}`);
+      lines.push(`Forskudd: ${fmtPlainNOK(data.deposit)}`);
+      lines.push(`Finansiert beløp: ${fmtPlainNOK(data.financed)}`);
+      lines.push(`Løpetid: ${data.years} år (${data.months} mnd)`);
+      lines.push(`Rente (nominell): ${fmtPct(data.rateAnnualPct)}`);
+      if (data.buyoutOn) {
+        lines.push(`Utkjøpspris ved utløp: ${fmtPlainNOK(data.buyout)}`);
+      }
+
+      lines.push('');
+      lines.push('RESULTAT');
+      lines.push(`Estimert pr. måned: ${fmtPlainNOK(data.monthly)}`);
+      lines.push('');
+
+      if (data.buyoutOn) {
+        lines.push('Merk: Utkjøpspris er et mulig sluttbeløp ved endt leasingperiode.');
+      }
+      lines.push('Merk: Veiledende estimat. Endelig leasingtilbud kan avvike basert på vilkår og kredittvurdering.');
+
+      return lines.join('\n');
+    }
+
+    function buildSummaryHtml(data, contact) {
+      const row = (k, v, accent = false) => `
+        <div class="row">
+          <div class="k">${k}</div>
+          <div class="v${accent ? ' accent' : ''}">${v}</div>
+        </div>
+      `;
+
+      const html = [];
+      html.push('<div class="block-title">Leasingkalkulator – veiledende sammendrag</div>');
+
+      html.push('<div class="block-sub">Firmaopplysninger</div>');
+      if (contact) {
+        html.push(row('Firmanavn', escapeHtml(contact.company)));
+        html.push(row('Org.nr', escapeHtml(contact.org)));
+        html.push(row('Kontaktperson', escapeHtml(contact.name)));
+        html.push(row('E-post', escapeHtml(contact.email)));
+        html.push(row('Telefon', escapeHtml(contact.phone)));
+      } else {
+        html.push(row('Status', 'Ikke oppgitt'));
+      }
+
+      html.push('<div class="block-sub">Beregning</div>');
+      html.push(row('Pris (eks. mva)', fmtPlainNOK(data.price)));
+      html.push(row('Forskudd', fmtPlainNOK(data.deposit)));
+      html.push(row('Finansiert beløp', fmtPlainNOK(data.financed)));
+      html.push(row('Løpetid', `${data.years} år (${data.months} mnd)`));
+      html.push(row('Rente (nominell)', fmtPct(data.rateAnnualPct)));
+      if (data.buyoutOn) {
+        html.push(row('Utkjøpspris ved utløp', fmtPlainNOK(data.buyout)));
+      }
+
+      html.push('<div class="block-sub">Resultat</div>');
+      html.push(row('Estimert pr. måned', fmtPlainNOK(data.monthly), true));
+
+      let note = 'Merk: Veiledende estimat. Endelig leasingtilbud kan avvike basert på vilkår og kredittvurdering.';
+      if (data.buyoutOn) {
+        note = 'Merk: Utkjøpspris er et mulig sluttbeløp ved endt leasingperiode. ' + note;
+      }
+
+      html.push(`<div class="note">${escapeHtml(note)}</div>`);
+      return html.join('');
+    }
+
+    function render(contact = null) {
+      const data = getCalcData();
+      if (!data) return;
+
+      out.bannerTitle.textContent = data.price > 0 ? 'Dette går' : 'Klar til beregning';
+      out.bannerText.textContent = data.price > 0
+        ? 'Veiledende månedlig leasing er beregnet ut fra tallene du har lagt inn.'
+        : 'Legg inn tall for å se estimat og vurdering.';
+      out.bannerStatus.textContent = data.price > 0 ? 'OK' : '—';
+      out.bannerStatus.className = data.price > 0 ? 'status-pill ok' : 'status-pill';
+
+      out.kpiMonthly.textContent = fmtPlainNOK(data.monthly);
+      out.kpiFinanced.textContent = fmtPlainNOK(data.financed);
+      out.kpiRate.textContent = fmtPct(data.rateAnnualPct);
+      out.kpiTerm.textContent = `${data.years} år`;
+      out.kpiModeHint.textContent = data.buyoutOn
+        ? `Beregnet med utkjøpspris (${fmtPlainNOK(data.buyout)}) ved utløp`
+        : 'Beregnet uten utkjøpspris';
+
+      out.summaryBox.innerHTML = buildSummaryHtml(data, contact);
+      out.summaryBox.dataset.copyText = buildSummaryText(data, contact);
+
+      const canDownload = data.price > 0;
+      btn.pdf.disabled = !canDownload;
+      btn.pdfNoInfo.disabled = !canDownload;
+    }
+
+    async function copySummary() {
+      const data = getCalcData();
+      if (!data) return;
+
+      const textToCopy = buildSummaryText(data, null);
+
+      try {
+        await navigator.clipboard.writeText(textToCopy);
       } catch {
         const ta = document.createElement('textarea');
-        ta.value = text;
+        ta.value = textToCopy;
         document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
         ta.remove();
-        showToast('Kopiert ✅');
       }
+
+      btn.copy.textContent = 'Kopiert ✔️';
+      setTimeout(() => {
+        btn.copy.textContent = 'Kopier sammendrag';
+      }, 1200);
     }
 
-    function buildMailtoLink(){
-      const subject = `Leasingforespørsel (${nowStamp()})`;
-      const body = buildCopyText();
-      return `mailto:${encodeURIComponent(MAIL_TO)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    function resetAll() {
+      inputs.price.value = '';
+      inputs.deposit.value = '';
+      inputs.termYears.value = '5';
+      inputs.rate.value = '7';
+      inputs.enableBuyout.checked = false;
+      inputs.buyout.value = '';
+      inputs.buyoutPreset.value = '';
+      ui.buyoutFields.classList.remove('open');
+      ui.helpTip.classList.remove('open');
+
+      modal.company.value = '';
+      modal.org.value = '';
+      modal.name.value = '';
+      modal.email.value = '';
+      modal.phone.value = '';
+
+      updateHelpExample();
+      render();
     }
 
-    // ✅ Valg 1: Ingen auto-PDF nedlasting her. Kun generer mail.
-    function sendRequestMail(e){
-      e.preventDefault();
-      updateUI();
-      ensureCustomerBoxVisible();
+    function openModal() {
+      const data = getCalcData();
+      if (!data) return;
+      if (data.price <= 0) {
+        showError('Legg inn pris over 0 for å laste ned PDF.');
+        return;
+      }
+      modal.back.classList.add('open');
+      setTimeout(() => modal.company.focus(), 0);
+    }
 
-      if (!validateCustomerFields()){
-        showToast('Fyll inn kundeinfo ❗');
+    function closeModal() {
+      modal.back.classList.remove('open');
+    }
+
+    async function generatePdf(calcData, contact) {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error('jsPDF er ikke lastet.');
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+      const margin = 46;
+      const contentWidth = 595.28 - margin * 2;
+      let y = 56;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(43, 47, 51);
+      doc.text('Leasingkalkulator – veiledende PDF', margin, y);
+
+      y += 18;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(106, 119, 135);
+      doc.text(`Opprettet: ${new Date().toLocaleString('nb-NO')}`, margin, y);
+
+      y += 22;
+
+      doc.setDrawColor(216, 221, 227);
+      doc.setFillColor(243, 241, 238);
+      doc.roundedRect(margin, y, contentWidth, 92, 10, 10, 'FD');
+
+      doc.setTextColor(43, 47, 51);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Firmaopplysninger', margin + 14, y + 20);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+
+      if (contact) {
+        doc.text(`Firmanavn: ${contact.company}`, margin + 14, y + 40);
+        doc.text(`Org.nr: ${contact.org}`, margin + 14, y + 56);
+        doc.text(`Kontaktperson: ${contact.name}`, margin + 280, y + 40);
+        doc.text(`Telefon: ${contact.phone}`, margin + 280, y + 56);
+        doc.text(`E-post: ${contact.email}`, margin + 280, y + 72);
+      } else {
+        doc.text('Bruker har valgt å ikke legge inn firmainformasjon.', margin + 14, y + 44);
+      }
+
+      y += 112;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12.5);
+      doc.setTextColor(230, 126, 34);
+      doc.text(`Estimert pr. måned: ${fmtNOK(calcData.monthly)}`, margin, y);
+
+      y += 20;
+
+      const rows = [
+        ['Pris (eks. mva)', fmtNOK(calcData.price)],
+        ['Forskudd', fmtNOK(calcData.deposit)],
+        ['Finansiert beløp', fmtNOK(calcData.financed)],
+        ['Løpetid', `${calcData.years} år (${calcData.months} mnd)`],
+        ['Rente (nominell)', fmtPct(calcData.rateAnnualPct)]
+      ];
+
+      if (calcData.buyoutOn) {
+        rows.push(['Utkjøpspris ved utløp', fmtNOK(calcData.buyout)]);
+      }
+
+      doc.setDrawColor(216, 221, 227);
+      doc.line(margin, y, margin + contentWidth, y);
+      y += 16;
+
+      const rightX = margin + contentWidth;
+      const valX = rightX - 4;
+
+      rows.forEach(([k, v]) => {
+        doc.setTextColor(106, 119, 135);
+        doc.text(k, margin, y);
+
+        doc.setTextColor(47, 59, 74);
+        doc.text(v, valX, y, { align: 'right' });
+
+        doc.setDrawColor(235, 238, 242);
+        doc.line(margin, y + 6, rightX, y + 6);
+        y += 18;
+      });
+
+      y += 8;
+      doc.setTextColor(106, 119, 135);
+      doc.setFontSize(9.5);
+
+      let note = 'Merk: Dette er et veiledende estimat. Endelig leasingtilbud kan avvike basert på vilkår og kredittvurdering.';
+      if (calcData.buyoutOn) {
+        note = 'Merk: Utkjøpspris er et mulig sluttbeløp ved endt leasingperiode. ' + note;
+      }
+
+      doc.text(doc.splitTextToSize(note, contentWidth), margin, y);
+
+      const suffix = contact ? (contact.org || 'med-info') : 'uten-info';
+      doc.save(`leasing_${suffix}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    async function downloadWithoutCompany() {
+      const data = getCalcData();
+      if (!data) return;
+      if (data.price <= 0) {
+        showError('Legg inn pris over 0 for å laste ned PDF.');
         return;
       }
 
-      window.location.href = buildMailtoLink();
+      try {
+        await generatePdf(data, null);
+      } catch (err) {
+        showError('PDF kunne ikke lastes ned. Dette skyldes ofte at eksterne script blokkeres av plattformen.');
+        console.error(err);
+      }
     }
 
-    // ---------- STATE ----------
-    function saveState(){
-      const s = {
-        inPrice: $('inPrice').value,
-        inFreq: $('inFreq').value,
-        inRate: $('inRate').value,
-        inYears: $('inYears').value,
-        inMonths: $('inMonths').value,
-        inDown: $('inDown').value,
-        inTrade: $('inTrade').value,
-        inVat: $('inVat').value,
-        inFeeStart: $('inFeeStart').value,
-        inFeePer: $('inFeePer').value,
+    async function confirmPdfWithCompany() {
+      const data = getCalcData();
+      if (!data) return;
 
-        cOrg: $('cOrg').value,
-        cFirm: $('cFirm').value,
-        cPerson: $('cPerson').value,
-        cEmail: $('cEmail').value,
-        cPhone: $('cPhone').value,
-        cMsg: $('cMsg').value,
-        customerOpen: $('customerBox').classList.contains('show'),
-        settingsOpen: $('detailsSettings')?.open ? true : false
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-    }
-
-    function loadState(){
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return;
-      try{
-        const s = JSON.parse(saved);
-        if (!s || typeof s !== 'object') return;
-
-        if (s.inPrice != null) $('inPrice').value = s.inPrice;
-        if (s.inFreq != null) $('inFreq').value = s.inFreq;
-        if (s.inRate != null) $('inRate').value = s.inRate;
-        if (s.inYears != null) $('inYears').value = s.inYears;
-        if (s.inMonths != null) $('inMonths').value = s.inMonths;
-        if (s.inDown != null) $('inDown').value = s.inDown;
-        if (s.inTrade != null) $('inTrade').value = s.inTrade;
-        if (s.inVat != null) $('inVat').value = s.inVat;
-        if (s.inFeeStart != null) $('inFeeStart').value = s.inFeeStart;
-        if (s.inFeePer != null) $('inFeePer').value = s.inFeePer;
-
-        if (s.cOrg != null) $('cOrg').value = s.cOrg;
-        if (s.cFirm != null) $('cFirm').value = s.cFirm;
-        if (s.cPerson != null) $('cPerson').value = s.cPerson;
-        if (s.cEmail != null) $('cEmail').value = s.cEmail;
-        if (s.cPhone != null) $('cPhone').value = s.cPhone;
-        if (s.cMsg != null) $('cMsg').value = s.cMsg;
-
-        if (s.customerOpen) $('customerBox').classList.add('show');
-        if (typeof s.settingsOpen === 'boolean') $('detailsSettings').open = s.settingsOpen;
-      } catch {}
-    }
-
-    function resetAll(){
-      $('inPrice').value = '';
-      $('inFreq').value = 'monthly';
-      $('inRate').value = '';
-      $('inYears').value = '7';
-      $('inMonths').value = '0';
-      $('inDown').value = '';
-      $('inTrade').value = '';
-      $('inVat').value = '25';
-      $('inFeeStart').value = '';
-      $('inFeePer').value = '';
-
-      $('cOrg').value = '';
-      $('cFirm').value = '';
-      $('cPerson').value = '';
-      $('cEmail').value = '';
-      $('cPhone').value = '';
-      $('cMsg').value = '';
-      $('customerBox').classList.remove('show');
-      $('detailsSettings').open = false;
-
-      localStorage.removeItem(STORAGE_KEY);
-      updateUI();
-    }
-
-    // ---------- PDF (seksjonsbasert: Kommentar blir eget kort og havner ikke midt i sideskift) ----------
-    function escapeHtml(s){
-      return String(s ?? '')
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#039;");
-    }
-
-    function pdfVal(v, placeholder='—'){
-      const s = String(v ?? '');
-      if (!s.replace(/\s/g,'').length) return escapeHtml(placeholder);
-      return escapeHtml(s);
-    }
-
-    function fmtMoneyPlain(n){
-      if (!Number.isFinite(n)) return '—';
-      return Math.round(n).toLocaleString('no-NO') + ' kr';
-    }
-
-    function buildPdfMarkup(){
-      const c = computeAll();
-
-      const mergedMessage = getMergedMessage();
-
-      const price = $('inPrice').value;
-      const rate = $('inRate').value;
-      const years = $('inYears').value;
-      const months = $('inMonths').value;
-      const down = $('inDown').value;
-      const trade = $('inTrade').value;
-
-      const vat = $('inVat').value;
-      const feeStart = $('inFeeStart').value;
-      const feePer = $('inFeePer').value;
-      const freq = $('inFreq').value;
-
-      const inputCard = `
-        <section class="card pdfSection">
-          <div class="card-h"><h2>Inndata</h2><div></div></div>
-          <div class="card-b">
-            <div class="muted" style="margin-bottom:12px;">
-              Fyll inn pris og løpetid. Rente/avgifter er veiledende. Du kan kopiere en forespørsel, sende e-post eller laste ned PDF.
-            </div>
-
-            <div class="row1 field">
-              <label><span>Pris på objekt (eks. mva)</span><span class="hint">kr</span></label>
-              <div class="pdfValue">${pdfVal(price, 'f.eks. 180000')}</div>
-            </div>
-
-            <div class="row2">
-              <div class="field">
-                <label><span>Fakturafrekvens</span><span class="hint">standard</span></label>
-                <div class="pdfValue">${pdfVal(freqTxt(freq))}</div>
-              </div>
-              <div class="field">
-                <label><span>Nominell rente (%)</span><span class="hint">veiledende</span></label>
-                <div class="pdfValue">${pdfVal(rate, 'f.eks. 6,9')}</div>
-              </div>
-            </div>
-
-            <div class="row2">
-              <div class="field">
-                <label><span>Løpetid år</span><span class="hint">år</span></label>
-                <div class="pdfValue">${pdfVal(years)}</div>
-              </div>
-              <div class="field">
-                <label><span>+ måneder</span><span class="hint">mnd</span></label>
-                <div class="pdfValue">${pdfVal(months)}</div>
-              </div>
-            </div>
-
-            <div class="row2">
-              <div class="field">
-                <label><span>Startleie / forskudd</span><span class="hint">kr (valgfritt)</span></label>
-                <div class="pdfValue">${pdfVal(down, 'f.eks. 0')}</div>
-              </div>
-              <div class="field">
-                <label><span>Forskudd fra innbytte</span><span class="hint">kr (valgfritt)</span></label>
-                <div class="pdfValue">${pdfVal(trade, 'f.eks. 0')}</div>
-              </div>
-            </div>
-
-            <div class="settingsBox" style="margin-top:0;">
-              <div style="display:flex;align-items:center;justify-content:space-between;font-weight:950;margin-bottom:10px;">
-                <div>Flere innstillinger</div><div class="muted">mva / gebyr</div>
-              </div>
-
-              <div class="row2" style="margin-bottom:14px;">
-                <div class="field">
-                  <label><span>Mva-sats (%)</span><span class="hint">standard 25</span></label>
-                  <div class="pdfValue">${pdfVal(vat, '25')}</div>
-                </div>
-                <div class="field">
-                  <label><span>Etableringsgebyr</span><span class="hint">kr (valgfritt)</span></label>
-                  <div class="pdfValue">${pdfVal(feeStart, 'f.eks. 0')}</div>
-                </div>
-              </div>
-
-              <div class="row2" style="margin-bottom:0;">
-                <div class="field">
-                  <label><span>Termingebyr per faktura</span><span class="hint">kr (valgfritt)</span></label>
-                  <div class="pdfValue">${pdfVal(feePer, 'f.eks. 0')}</div>
-                </div>
-                <div class="field">
-                  <label><span>&nbsp;</span><span class="hint">&nbsp;</span></label>
-                  <div class="muted" style="padding:10px 0 0;">Gebyr kan variere mellom leasingpartnere.</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="footnote">
-              <b>Merk:</b> Beregningen er veiledende og forutsetter kredittgodkjenning. Rente varierer med kredittvurdering og finanspartner. Endelig tilbud fastsettes av finanspartner.<br/>
-              <b>Avrunding:</b> beløp rundes <b>opp</b> til nærmeste <b>100 kr</b> i visning.
-            </div>
-          </div>
-        </section>
-      `;
-
-      const resultCard = `
-        <section class="card pdfSection" style="margin-top:16px;">
-          <div class="card-h"><h2>Resultat</h2><div></div></div>
-          <div class="card-b">
-            <div class="status">
-              <div>
-                <div class="title">${(Number.isFinite(c.termExRounded) ? 'Beregnet' : 'Mangler tall')}</div>
-                <div class="muted">${(Number.isFinite(c.termExRounded) ? 'Veiledende terminbeløp og summer er beregnet fra dine inndata.' : 'Fyll inn pris (eks. mva), rente og løpetid for å beregne termin.')}</div>
-              </div>
-              <div class="badge ${Number.isFinite(c.termExRounded)?'ok':'warn'}">${Number.isFinite(c.termExRounded)?'OK':'INFO'}</div>
-            </div>
-
-            <div class="minmax">
-              <div class="mm">
-                <div class="k">Estimert termin (eks. mva)</div>
-                <div class="v">${escapeHtml(fmtMoneyPlain(c.termExRounded))}</div>
-                <div class="s">inkl. termingebyr per faktura</div>
-              </div>
-              <div class="mm">
-                <div class="k">Finansiert beløp (eks. mva)</div>
-                <div class="v">${escapeHtml(fmtMoneyPlain(ceil100(c.financed)))}</div>
-                <div class="s">pris − forskudd − innbytte (+ etablering)</div>
-              </div>
-              <div class="mm">
-                <div class="k">Løpetid</div>
-                <div class="v">${Number.isFinite(c.n) ? escapeHtml(`${fmtCount(c.n)} terminer (${freqLabel(c.freq)})`) : '—'}</div>
-                <div class="s">antall terminer etter frekvens</div>
-              </div>
-            </div>
-
-            <div class="summary">
-              <div class="lead">Oppsummering</div>
-              <div class="lines">
-                <div><span>Estimert termin:</span> <b>${escapeHtml(fmtMoneyPlain(c.termExRounded))}</b> ${escapeHtml(freqLabel(c.freq))} (eks. mva).</div>
-                <div><span>Finansiert beløp:</span> <b>${escapeHtml(fmtMoneyPlain(ceil100(c.financed)))}</b> (eks. mva).</div>
-              </div>
-            </div>
-
-            <div style="margin-top:14px;font-weight:950;">Vis beregning</div>
-            <div class="calcbox">${escapeHtml($('calcText').textContent || '—')}</div>
-          </div>
-        </section>
-      `;
-
-      // ✅ Kommentar (valgfritt) som eget kort = splittes ikke midt i sideskift
-      const messageCard = `
-        <section class="card pdfSection" style="margin-top:16px;">
-          <div class="card-h"><h2>Kommentar (valgfritt)</h2><div></div></div>
-          <div class="card-b">
-            <div class="row1 field" style="margin-bottom:0;">
-              <label><span>Kommentar (valgfritt)</span><span class="hint">til forespørsel</span></label>
-              <div class="pdfValue multiline">${pdfVal(mergedMessage, '—')}</div>
-            </div>
-          </div>
-        </section>
-      `;
-
-      return `
-        <div class="wrap" style="max-width:1100px;margin:14px auto;padding:0 14px 18px;">
-          ${inputCard}
-          ${resultCard}
-          ${messageCard}
-        </div>
-      `;
-    }
-
-    function buildPdfHtml(){
-      const styles = Array.from(document.querySelectorAll('style'))
-        .map(s => s.textContent || '')
-        .join('\n');
-
-      const pdfOnlyCss = `
-        body{ background:#ffffff !important; }
-        .topbar{ position:static !important; box-shadow:none !important; }
-        .top-actions{ display:none !important; }
-        .card{ box-shadow:none !important; }
-        .grid{ display:block !important; }
-        .actions, .toast, .customerBox{ display:none !important; }
-
-        .pdfValue{
-          width:100%;
-          padding:12px 12px;
-          border:1px solid #cfd7e3;
-          border-radius:12px;
-          font-size:15px;
-          font-weight:900;
-          background:#fff;
-          color:#0f172a;
-          min-height:46px;
-          display:flex;
-          align-items:center;
-          overflow:hidden;
-          white-space:nowrap;
-          text-overflow:ellipsis;
-        }
-        .pdfValue.multiline{
-          white-space:pre-wrap;
-          align-items:flex-start;
-          min-height:86px;
-        }
-      `;
-
-      const topbar = document.querySelector('.topbar')?.outerHTML || '';
-      const pdfMarkup = buildPdfMarkup();
-
-      return `<!doctype html>
-<html lang="no">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PDF</title>
-<style>${styles}\n${pdfOnlyCss}</style>
-</head>
-<body>
-<div id="pdfRoot">${topbar}${pdfMarkup}</div>
-</body>
-</html>`;
-    }
-
-    function isMostlyWhite(r,g,b,a){
-      if (a === 0) return true;
-      return (r >= 250 && g >= 250 && b >= 250);
-    }
-    function cropCanvasBottom(canvas){
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      const w = canvas.width;
-      const h = canvas.height;
-
-      const img = ctx.getImageData(0, 0, w, h).data;
-      const rowStride = 4 * w;
-      const xStep = Math.max(1, Math.floor(w / 250));
-
-      let lastContentY = -1;
-      const bottomMargin = Math.round(Math.min(40, h * 0.02));
-
-      for (let y = h - 1; y >= 0; y--){
-        const rowOffset = y * rowStride;
-        let hasInk = false;
-
-        for (let x = 0; x < w; x += xStep){
-          const i = rowOffset + x * 4;
-          const rr = img[i], gg = img[i+1], bb = img[i+2], aa = img[i+3];
-          if (!isMostlyWhite(rr,gg,bb,aa)){
-            hasInk = true;
-            break;
-          }
-        }
-
-        if (hasInk){
-          lastContentY = y;
-          break;
-        }
+      const validation = validateCompanyInfo();
+      if (!validation.ok) {
+        showError(validation.message);
+        return;
       }
 
-      if (lastContentY < 0) return canvas;
-
-      const newH = Math.min(h, lastContentY + 1 + bottomMargin);
-      if (newH >= h - 2) return canvas;
-
-      const out = document.createElement('canvas');
-      out.width = w;
-      out.height = newH;
-      out.getContext('2d').drawImage(canvas, 0, 0, w, newH, 0, 0, w, newH);
-      return out;
+      try {
+        await generatePdf(data, validation.info);
+        render(validation.info);
+        closeModal();
+      } catch (err) {
+        showError('PDF kunne ikke lastes ned. Dette skyldes ofte at eksterne script blokkeres av plattformen.');
+        console.error(err);
+      }
     }
 
-    async function renderSectionToCanvas(sectionEl){
-      const canvas = await html2canvas(sectionEl, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0
+    function bind() {
+      [inputs.price, inputs.deposit, inputs.rate, inputs.buyout].forEach(node => {
+        node.addEventListener('input', () => {
+          updateHelpExample();
+          render();
+        });
       });
-      return cropCanvasBottom(canvas);
-    }
 
-    function addCanvasToPdf(pdf, canvas, marginMm){
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      inputs.termYears.addEventListener('change', () => {
+        updateHelpExample();
+        render();
+      });
 
-      const usableWidth = pageWidth - marginMm*2;
-      const imgWidth = usableWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      inputs.enableBuyout.addEventListener('change', () => {
+        ui.buyoutFields.classList.toggle('open', inputs.enableBuyout.checked);
+        if (!inputs.enableBuyout.checked) {
+          inputs.buyout.value = '';
+          inputs.buyoutPreset.value = '';
+        }
+        updateHelpExample();
+        render();
+      });
 
-      return { imgWidth, imgHeight, pageWidth, pageHeight };
-    }
+      inputs.buyoutPreset.addEventListener('change', () => {
+        if (!inputs.enableBuyout.checked) return;
 
-    async function downloadPdf(){
-      updateUI();
-
-      const html = buildPdfHtml();
-
-      const btn = $('btnPdf');
-      const prev = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Lager PDF…';
-
-      let iframe = document.getElementById('pdfFrame');
-      if (!iframe){
-        iframe = document.createElement('iframe');
-        iframe.id = 'pdfFrame';
-        iframe.setAttribute('aria-hidden','true');
-        iframe.tabIndex = -1;
-        document.body.appendChild(iframe);
-      }
-
-      try{
-        const doc = iframe.contentDocument;
-        doc.open();
-        doc.write(html);
-        doc.close();
-
-        await new Promise(r => setTimeout(r, 350));
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-
-        const marginMm = 8;
-        let cursorY = marginMm;
-
-        const sections = Array.from(doc.querySelectorAll('.pdfSection'));
-        for (let idx=0; idx<sections.length; idx++){
-          const section = sections[idx];
-          const canvas = await renderSectionToCanvas(section);
-
-          const dims = addCanvasToPdf(pdf, canvas, marginMm);
-          const pageHeight = dims.pageHeight;
-
-          if (cursorY + dims.imgHeight > pageHeight - marginMm){
-            pdf.addPage();
-            cursorY = marginMm;
-          }
-
-          const imgData = canvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', marginMm, cursorY, dims.imgWidth, dims.imgHeight);
-          cursorY += dims.imgHeight + 6;
+        const mode = inputs.buyoutPreset.value;
+        if (mode === 'pct') {
+          const price = asZero(toNumber(inputs.price.value));
+          const years = parseInt(inputs.termYears.value, 10) || 5;
+          const suggested = Math.round(price * defaultBuyoutPct(years));
+          inputs.buyout.value = price > 0 ? String(suggested) : '';
+        } else if (mode === 'custom') {
+          inputs.buyout.value = '';
+          inputs.buyout.focus();
         }
 
-        pdf.save(`leasingkalkulator_${nowStamp().replace(/[:\s]/g,'-')}.pdf`);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = prev;
-      }
-    }
+        updateHelpExample();
+        render();
+      });
 
-    // ---------- Wiring ----------
-    function wire(){
-      $('btnReset').addEventListener('click', resetAll);
-      $('btnCopy').addEventListener('click', copyRequest);
-      $('btnSend').addEventListener('click', sendRequestMail);
-      $('btnPdf').addEventListener('click', downloadPdf);
+      ui.helpBtn.addEventListener('click', () => {
+        ui.helpTip.classList.toggle('open');
+      });
 
-      const ids = [
-        'inPrice','inFreq','inRate','inYears','inMonths',
-        'inDown','inTrade','inVat','inFeeStart','inFeePer',
-        'cOrg','cFirm','cPerson','cEmail','cPhone','cMsg'
-      ];
+      btn.reset.addEventListener('click', resetAll);
+      btn.copy.addEventListener('click', copySummary);
+      btn.pdf.addEventListener('click', openModal);
+      btn.pdfNoInfo.addEventListener('click', downloadWithoutCompany);
 
-      let t;
-      const debounce = () => {
-        clearTimeout(t);
-        t = setTimeout(()=>{ updateUI(); }, 120);
-        saveState();
-      };
-
-      ids.forEach(id=>{
-        const el = $(id);
-        el.addEventListener('input', ()=>{
-          if ($('live').checked) debounce();
-          else saveState();
-        });
-        el.addEventListener('change', ()=>{
-          if ($('live').checked) debounce();
-          else saveState();
-        });
+      modal.close.addEventListener('click', closeModal);
+      modal.cancel.addEventListener('click', closeModal);
+      modal.confirm.addEventListener('click', confirmPdfWithCompany);
+      modal.back.addEventListener('click', (e) => {
+        if (e.target === modal.back) closeModal();
       });
     }
 
-    (function init(){
-      if (!$('inRate').value) $('inRate').value = '6,9';
-      loadState();
-      wire();
-      updateUI();
-    })();
+    updateHelpExample();
+    bind();
+    render();
   </script>
 </body>
 </html>
